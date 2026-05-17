@@ -1,0 +1,142 @@
+.composition-preview {
+  padding: 1rem;
+  background: rgba(30, 30, 45, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.preview-header .section-title {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 0;
+}
+
+.title-icon {
+  color: #f43f5e;
+  font-size: 1rem;
+}
+
+.clear-btn {
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+  background: rgba(244, 63, 94, 0.4);
+}
+
+.composition-slots {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.slot {
+  position: relative;
+  width: 56px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+
+.slot.filled {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(251, 113, 133, 0.2));
+  border: 1px solid rgba(244, 63, 94, 0.4);
+}
+
+.slot.empty {
+  background: rgba(30, 30, 45, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.remove-agent-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.slot.filled:hover .remove-agent-btn {
+  opacity: 1;
+}
+
+.remove-agent-btn:hover {
+  background: #f43f5e;
+}
+
+.slot-agent-image {
+  width: 100%;
+  height: 80%;
+  object-fit: cover;
+}
+
+.slot-agent-name {
+  padding: 0.2rem;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  background: rgba(20, 20, 30, 0.9);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plus-icon {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.slot-label {
+  display: none;
+}

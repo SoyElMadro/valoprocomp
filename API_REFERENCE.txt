@@ -1,0 +1,59 @@
+================================================================================
+VALORANT COMPOSITION BUILDER - API REFERENCE
+================================================================================
+
+API URL:
+https://api.thespike.gg/stats/compositions
+
+RESPONSE EXAMPLE:
+[
+  {
+    "agents": [
+      { "thumbnailUrl": "https://cdn.thespike.gg/agents%2Fomen_1591769923431.png", "title": "Omen" },
+      { "thumbnailUrl": "https://cdn.thespike.gg/agents%2Fviper_1591769954563.png", "title": "Viper" },
+      { "thumbnailUrl": "https://cdn.thespike.gg/agents%2Fsova_1591769948706.png", "title": "Sova" },
+      { "thumbnailUrl": "https://cdn.thespike.gg/agents%2Fkilljoy-thumb_1597648003087.png", "title": "Killjoy" },
+      { "thumbnailUrl": "https://cdn.thespike.gg/agents%2Fneon_1641977227735.png", "title": "Neon" }
+    ],
+    "pickRate": "3.48",
+    "totalSidesPlayed": 12494,
+    "winRate": "57.24",
+    "wins": "249",
+    "timesPlayed": 435
+  }
+]
+
+================================================================================
+FILTER BY MAP:
+================================================================================
+Use query parameter: ?map={map_id}
+
+Example: https://api.thespike.gg/stats/compositions?map=1
+
+================================================================================
+MAP ID LIST:
+================================================================================
+1  = Split
+2  = Bind
+3  = Haven
+4  = Ascent
+5  = Icebox
+6  = Breeze
+7  = Fracture
+8  = Pearl
+9  = Lotus
+10 = Sunset
+11 = Abyss
+12 = Corrode
+
+================================================================================
+HOW THE APP USES THE DATA:
+================================================================================
+1. Fetch compositions from the API filtered by selected map
+2. Compare user's selected teammate agents with each composition's agents
+3. Calculate match percentage (how many of user's agents appear in composition)
+4. Prioritize compositions with highest match percentage
+5. Recommend missing agents from best-matching compositions
+6. Sort recommendations by: match percentage > timesPlayed > winRate > pickRate
+7. Display recommended agents with full composition details
+8. If no agents selected, show top compositions by winRate and pickRate

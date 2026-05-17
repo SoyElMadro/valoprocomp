@@ -1,0 +1,136 @@
+.agent-selector {
+  padding: 1.5rem;
+}
+
+.role-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.role-filter-btn {
+  background: rgba(30, 30, 45, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-filter-btn:hover {
+  border-color: rgba(244, 63, 94, 0.5);
+  color: white;
+}
+
+.role-filter-btn.active {
+  background: #f43f5e;
+  border-color: #f43f5e;
+  color: white;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1.25rem;
+  margin-top: 0;
+}
+
+.title-icon {
+  color: #f43f5e;
+  font-size: 1.25rem;
+}
+
+.agent-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+}
+
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+
+.agent-card {
+  position: relative;
+  background: rgba(30, 30, 45, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 8px 25px rgba(244, 63, 94, 0.2);
+}
+
+.agent-card.selected {
+  border-color: #f43f5e;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+}
+
+.agent-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.agent-card:hover .agent-image {
+  transform: scale(1.05);
+}
+
+.agent-name {
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  background: rgba(20, 20, 30, 0.9);
+}
+
+.selected-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(244, 63, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.agent-card.selected .selected-overlay {
+  opacity: 1;
+}
+
+.check-icon {
+  font-size: 2rem;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 600px) {
+  .agents-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

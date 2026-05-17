@@ -1,0 +1,224 @@
+.recommended-agents {
+  padding: 1.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1.25rem;
+  margin-top: 0;
+}
+
+.title-icon {
+  color: #f43f5e;
+  font-size: 1.25rem;
+}
+
+.badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f43f5e, #fb7185);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(30, 30, 45, 0.4);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-results p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.no-results .hint {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recommendation-card {
+  background: rgba(30, 30, 45, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.recommendation-card:hover {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 8px 30px rgba(244, 63, 94, 0.15);
+  transform: translateY(-2px);
+}
+
+.rec-rank {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.2);
+  min-width: 40px;
+}
+
+.rec-agent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rec-agent-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(244, 63, 94, 0.5);
+}
+
+.rec-agent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.rec-agent-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.match-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.match-percentage {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.match-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rec-stats {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rec-composition {
+  grid-column: 1 / -1;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.comp-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.comp-agents {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.comp-agent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.comp-agent img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.comp-agent span {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.comp-agent.included {
+  border-color: rgba(244, 63, 94, 0.5);
+  background: rgba(244, 63, 94, 0.1);
+}
+
+.comp-agent.included span {
+  color: #f43f5e;
+}
+
+@media (max-width: 768px) {
+  .recommendation-card {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .rec-rank {
+    display: none;
+  }
+
+  .rec-stats {
+    justify-content: center;
+  }
+
+  .rec-composition {
+    grid-column: auto;
+  }
+}
