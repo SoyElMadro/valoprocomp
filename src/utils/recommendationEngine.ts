@@ -293,6 +293,12 @@ export const getSynergyRecommendations = (
 
   const totalBaseUses = baseComps.reduce((sum, comp) => sum + comp.timesPlayed, 0);
 
+  const selectedRoles = selectedAgents.map(a => ROLES[a.title] || 'Unknown');
+  const roleCount: Record<string, number> = {};
+  selectedRoles.forEach(role => {
+    roleCount[role] = (roleCount[role] || 0) + 1;
+  });
+
   const candidateNames = new Set<string>();
   baseComps.forEach(comp => {
     comp.agents.forEach(agent => {
@@ -327,6 +333,11 @@ export const getSynergyRecommendations = (
 
     const agent = compositions[0].agents.find(a => a.title.toLowerCase() === agentName);
     if (!agent) return;
+
+    const candidateRole = ROLES[agent.title];
+    if (isPartialMatch && candidateRole && roleCount[candidateRole] >= 2) {
+      return;
+    }
 
     let tag: SynergyTag;
     let explanation: string;
