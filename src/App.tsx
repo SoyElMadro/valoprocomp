@@ -10,6 +10,7 @@ import { LoadingState } from './components/LoadingState';
 import { ErrorState } from './components/ErrorState';
 import { useCompositions } from './hooks/useCompositions';
 import { scoreCompositions, getTopCompositions, getSynergyRecommendations } from './utils/recommendationEngine';
+import { RecommendationExplanation } from './components/RecommendationExplanation';
 import { getMapName } from './data/maps';
 import './App.css';
 
@@ -29,8 +30,8 @@ function App() {
 
   const synergyRecommendations = useMemo(() => {
     if (selectedAgents.length === 0 || selectedAgents.length >= 5) return [];
-    return getSynergyRecommendations(compositions, selectedAgents, 5);
-  }, [compositions, selectedAgents]);
+    return getSynergyRecommendations(compositions, selectedAgents, 5, selectedMap?.toString());
+  }, [compositions, selectedAgents, selectedMap]);
 
   const handleSelectMap = (mapId: number) => {
     setSelectedMap(mapId);
@@ -102,6 +103,10 @@ function App() {
                   mapName={getMapName(selectedMap)}
                   compositionsFound={compositions.length}
                 />
+
+                {selectedAgents.length > 0 && synergyRecommendations.length > 0 && (
+                  <RecommendationExplanation recommendations={synergyRecommendations} />
+                )}
 
                 <ProCompositions
                   compositions={topCompositions}

@@ -2,6 +2,16 @@ import { useState } from 'react';
 import type { SynergyRecommendation as SynergyRec, Agent } from '../types';
 import './AgentRecommendationDashboard.css';
 
+interface TacticalRec extends SynergyRec {
+  candidateScore?: {
+    finalScore: number;
+    proDataScore: number;
+    compositionFitScore: number;
+    roleNeedScore: number;
+    redundancyPenalty: number;
+  };
+}
+
 interface Props {
   recommendations: SynergyRec[];
   selectedAgents: Agent[];
@@ -31,9 +41,14 @@ export const AgentRecommendationDashboard = ({
 }: Props) => {
   const [showDetails, setShowDetails] = useState(false);
 
-  const mainRec = recommendations[0];
-  const alternatives = recommendations.slice(1);
-  const hasPartialMatch = recommendations.some(r => r.isPartialMatch);
+  const tacticalRecs = recommendations as TacticalRec[];
+  const mainRec = tacticalRecs[0];
+  const alternatives = tacticalRecs.slice(1);
+  const hasPartialMatch = tacticalRecs.some(r => r.isPartialMatch);
+
+  const getDisplayScore = (rec: TacticalRec): number => {
+    return rec.candidateScore?.finalScore ?? rec.synergyScore;
+  };
 
   if (selectedAgents.length === 0) {
     return (
@@ -91,7 +106,7 @@ export const AgentRecommendationDashboard = ({
               <span className={`main-role ${mainRec.agent.role}`}>{mainRec.agent.role}</span>
               <div className={`main-tag ${getTagClass(mainRec.tag)}`}>{mainRec.tag}</div>
               <div className="main-score">
-                <span className="score-num">{mainRec.synergyScore.toFixed(1)}</span>
+                <span className="score-num">{getDisplayScore(mainRec).toFixed(1)}</span>
                 <span className="score-label">Score</span>
               </div>
             </div>
@@ -113,7 +128,7 @@ export const AgentRecommendationDashboard = ({
                   <span className={`alt-role ${rec.agent.role}`}>{rec.agent.role}</span>
                 </div>
                 <div className="alt-stats">
-                  <span className="alt-score">{rec.synergyScore.toFixed(1)}</span>
+                  <span className="alt-score">{getDisplayScore(rec).toFixed(1)}</span>
                   <span className="alt-wr">{rec.adjustedWinRate.toFixed(1)}% WR</span>
                   <span className="alt-times">{rec.timesTogether}x</span>
                 </div>
@@ -145,7 +160,7 @@ export const AgentRecommendationDashboard = ({
                 <div className="detail-stats">
                   <div className="detail-stat">
                     <span className="label">Score</span>
-                    <span className="value">{rec.synergyScore.toFixed(1)}</span>
+                    <span className="value">{getDisplayScore(rec).toFixed(1)}</span>
                   </div>
                   <div className="detail-stat">
                     <span className="label">WR Ajustado</span>

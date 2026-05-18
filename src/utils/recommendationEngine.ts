@@ -1,4 +1,9 @@
 import type { Composition, Agent, ScoredComposition, RecommendedAgent, CompositionTag, SynergyRecommendation, SynergyTag } from '../types';
+import { getAgentProfile } from './agentProfiles';
+import { analyzeComposition, type CompositionAnalysis } from './compositionAnalyzer';
+import { calculateCandidateScore, getScoreBreakdown } from './tacticalScoring';
+import type { CandidateScore } from './tacticalScoring';
+import { analyzeRolePatterns, type RolePatternAnalysis } from './rolePatternAnalyzer';
 
 const ROLES: Record<string, string> = {
   Astra: 'Controlador',
@@ -171,6 +176,56 @@ export const getTopCompositions = (
     .slice(0, limit);
 };
 
+const calculateWeightedWinrate = (comps: Composition[]): number => {
+  if (comps.length === 0) return 50;
+
+  const totalUses = comps.reduce((sum, comp) => sum + comp.timesPlayed, 0);
+  if (totalUses === 0) return 50;
+
+  const weightedSum = comps.reduce((sum, comp) => {
+    return sum + parseFloat(comp.winRate) * comp.timesPlayed;
+  }, 0);
+
+  return weightedSum / totalUses;
+};
+
+const getExactMatches = (
+  compositions: Composition[],
+  selectedAgents: Agent[]
+): Composition[] => {
+  const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
+  return compositions.filter(comp => {
+    const compNames = comp.agents.map(a => a.title.toLowerCase());
+    return selectedNames.every(name => compNames.includes(name));
+  });
+};
+
+const getPartialMatches = (
+  compositions: Composition[],
+  selectedAgents: Agent[]
+): Composition[] => {
+  const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
+  const minMatches = Math.max(selectedAgents.length - 1, 1);
+
+  return compositions.filter(comp => {
+    const compNames = comp.agents.map(a => a.title.toLowerCase());
+    const matches = selectedNames.filter(name => compNames.includes(name)).length;
+    return matches >= minMatches;
+  });
+};
+
+export interface TacticalRecommendation extends SynergyRecommendation {
+  candidateScore: CandidateScore;
+  analysis: CompositionAnalysis;
+  patternAnalysis: RolePatternAnalysis;
+  whyThisPick: string;
+  pros: string[];
+  cons: string[];
+  rejectedAlternatives: { agentName: string; reason: string }[];
+  confidence: 'high' | 'medium' | 'low';
+  matchType: 'exact' | 'partial';
+}
+
 const getRecommendationLabel = (params: {
   synergyScore: number;
   adjustedWinrate: number;
@@ -235,52 +290,63 @@ const getRecommendationLabel = (params: {
   };
 };
 
-const calculateWeightedWinrate = (comps: Composition[]): number => {
-  if (comps.length === 0) return 50;
+const generateWhyThisPick = (
+  candidate: CandidateScore,
+  selectedAgents: Agent[],
+  analysis: CompositionAnalysis
+): string => {
+  const profile = getAgentProfile(candidate.agent.title);
+  if (!profile) return '';
 
-  const totalUses = comps.reduce((sum, comp) => sum + comp.timesPlayed, 0);
-  if (totalUses === 0) return 50;
+  const selectedProfiles = selectedAgents
+    .map(a => getAgentProfile(a.title))
+    .filter(Boolean);
 
-  const weightedSum = comps.reduce((sum, comp) => {
-    return sum + parseFloat(comp.winRate) * comp.timesPlayed;
-  }, 0);
+  const parts: string[] = [];
 
-  return weightedSum / totalUses;
-};
+  if (analysis.needs.missingRoles.includes(profile.role)) {
+    parts.push(`Tu equipo necesita un ${profile.role} y ${candidate.agent.title} lo provee.`);
+  }
 
-const getExactMatches = (
-  compositions: Composition[],
-  selectedAgents: Agent[]
-): Composition[] => {
-  const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
-  return compositions.filter(comp => {
-    const compNames = comp.agents.map(a => a.title.toLowerCase());
-    return selectedNames.every(name => compNames.includes(name));
-  });
-};
+  if (profile.subroles.includes('wall-controller') && analysis.needs.hasPrimarySmokes) {
+    parts.push(`${candidate.agent.title} añade control de paredes y mapa sin duplicar el rol de smokes primarios.`);
+  }
 
-const getPartialMatches = (
-  compositions: Composition[],
-  selectedAgents: Agent[]
-): Composition[] => {
-  const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
-  const minMatches = Math.max(selectedAgents.length - 1, 1);
+  const filledFunctions = profile.subroles.filter(
+    sub => analysis.needs.missingTacticalFunctions.includes(sub)
+  );
+  if (filledFunctions.length > 0) {
+    parts.push(`Añade: ${filledFunctions.join(', ')}.`);
+  }
 
-  return compositions.filter(comp => {
-    const compNames = comp.agents.map(a => a.title.toLowerCase());
-    const matches = selectedNames.filter(name => compNames.includes(name)).length;
-    return matches >= minMatches;
-  });
+  if (selectedProfiles.length > 0) {
+    const synergies = selectedProfiles
+      .filter(p => p && profile.synergiesWith.includes(p.agentName))
+      .map(p => p!.agentName);
+    if (synergies.length > 0) {
+      parts.push(`Sinergiza bien con: ${synergies.join(', ')}.`);
+    }
+  }
+
+  if (analysis.needs.duplicatedRoles.includes(profile.role)) {
+    const existing = selectedAgents.filter(a => getAgentProfile(a.title)?.role === profile.role);
+    parts.push(`NOTA: Ya tienes ${existing.map(a => a.title).join(', ')} - ${candidate.agent.title} es redundante en rol.`);
+  }
+
+  return parts.join(' ');
 };
 
 export const getSynergyRecommendations = (
   compositions: Composition[],
   selectedAgents: Agent[],
-  limit: number = 5
-): SynergyRecommendation[] => {
+  limit: number = 5,
+  mapId?: string
+): TacticalRecommendation[] => {
   if (selectedAgents.length === 0) return [];
 
   const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
+  const analysis = analyzeComposition(selectedAgents, mapId);
+  const patternAnalysis = analyzeRolePatterns(compositions, selectedAgents);
 
   let baseComps = getExactMatches(compositions, selectedAgents);
   const isPartialMatch = baseComps.length < 3;
@@ -309,7 +375,9 @@ export const getSynergyRecommendations = (
     });
   });
 
-  const recommendations: SynergyRecommendation[] = [];
+  const recommendations: TacticalRecommendation[] = [];
+
+  const candidateScores: Map<string, CandidateScore> = new Map();
 
   candidateNames.forEach(agentName => {
     const candidateMatchingComps = baseComps.filter(comp =>
@@ -325,19 +393,142 @@ export const getSynergyRecommendations = (
 
     if (timesTogether <= 0) return;
 
+    const agent = compositions[0].agents.find(a => a.title.toLowerCase() === agentName);
+    if (!agent) return;
+
+    const candidateProfile = getAgentProfile(agent.title);
+    const candidateRole = candidateProfile?.role ? ROLES[agent.title] : undefined;
+
+    if (candidateRole === 'Controlador' && roleCount['Controlador'] >= 2) {
+      return;
+    }
+
+    if (isPartialMatch && candidateRole && roleCount[candidateRole] >= 2) {
+      const hasStrongJustification = candidateProfile?.subroles.includes('wall-controller') ||
+        candidateProfile?.subroles.includes('anchor') ||
+        candidateProfile?.subroles.includes('postplant');
+
+      if (!hasStrongJustification) {
+        return;
+      }
+    }
+
+    const candidateScore = calculateCandidateScore(
+      agent,
+      selectedAgents,
+      candidateMatchingComps,
+      mapId,
+      analysis,
+      isPartialMatch,
+      patternAnalysis
+    );
+
+    candidateScores.set(agentName, candidateScore);
+  });
+
+  const sortedCandidates = Array.from(candidateScores.entries())
+    .sort((a, b) => b[1].finalScore - a[1].finalScore);
+
+  const criticalMissingFunctions = ['anchor', 'wall-controller', 'postplant', 'map-control'];
+  const missingFunctions = analysis.needs.missingTacticalFunctions;
+  const hasCriticalNeeds = criticalMissingFunctions.some(
+    func => missingFunctions.includes(func as any)
+  ) || (!analysis.needs.hasSentinelAnchor && !analysis.needs.hasWallController);
+
+  const hasOmen = selectedAgents.some(a => a.title.toLowerCase() === 'omen');
+  const needsWallController = !analysis.needs.hasWallController;
+  const hasTwoControllers = roleCount['Controlador'] >= 2;
+
+  if (!hasTwoControllers && hasOmen && needsWallController && compositions[0]?.agents) {
+    const viperAgent = compositions[0].agents.find(a => a.title.toLowerCase() === 'viper');
+    if (viperAgent) {
+      const alreadyHasViper = sortedCandidates.some(([name]) => name.toLowerCase() === 'viper');
+      if (!alreadyHasViper) {
+        const viperScore = calculateCandidateScore(
+          viperAgent,
+          selectedAgents,
+          [],
+          mapId,
+          analysis,
+          true,
+          patternAnalysis
+        );
+
+        sortedCandidates.unshift(['viper', viperScore]);
+        sortedCandidates.sort((a, b) => b[1].finalScore - a[1].finalScore);
+      }
+    }
+  }
+
+  const topCoversCriticalNeed = sortedCandidates.length > 0 && sortedCandidates.slice(0, 2).some(([name]) => {
+    const profile = getAgentProfile(name);
+    return profile?.subroles.some(sub => criticalMissingFunctions.includes(sub));
+  });
+
+  if (!hasTwoControllers && hasCriticalNeeds && !topCoversCriticalNeed && compositions[0]?.agents) {
+    const allAgents = compositions[0].agents;
+    const selectedNamesLower = selectedNames.map(n => n.toLowerCase());
+
+    const candidatesForCriticalNeeds = allAgents
+      .filter(agent => !selectedNamesLower.includes(agent.title.toLowerCase()))
+      .filter(agent => {
+        const profile = getAgentProfile(agent.title);
+        return profile?.role !== 'Controlador';
+      })
+      .map(agent => {
+        const profile = getAgentProfile(agent.title);
+        if (!profile) return null;
+
+        const coversCriticalNeed = profile.subroles.some(sub =>
+          criticalMissingFunctions.includes(sub)
+        );
+
+        if (!coversCriticalNeed) return null;
+
+        const score = calculateCandidateScore(
+          agent,
+          selectedAgents,
+          [],
+          mapId,
+          analysis,
+          true,
+          patternAnalysis
+        );
+
+        return { agent, score };
+      })
+      .filter(Boolean) as { agent: Agent; score: CandidateScore }[];
+
+    candidatesForCriticalNeeds.forEach(({ agent, score }) => {
+      const existingIndex = sortedCandidates.findIndex(([name]) => name.toLowerCase() === agent.title.toLowerCase());
+      if (existingIndex === -1) {
+        sortedCandidates.push([agent.title, score]);
+      }
+    });
+
+    sortedCandidates.sort((a, b) => b[1].finalScore - a[1].finalScore);
+  }
+
+  const topCandidates = sortedCandidates.slice(0, limit * 2);
+
+  topCandidates.forEach(([agentName, candidateScore]) => {
+    const agent = compositions[0].agents.find(a => a.title.toLowerCase() === agentName);
+    if (!agent) return;
+
+    const candidateMatchingComps = baseComps.filter(comp =>
+      comp.agents.some(a => a.title.toLowerCase() === agentName)
+    );
+
+    const timesTogether = candidateMatchingComps.reduce(
+      (sum, comp) => sum + comp.timesPlayed,
+      0
+    );
+
     const appearanceRate = (timesTogether / totalBaseUses) * 100;
     const weightedWinrate = calculateWeightedWinrate(candidateMatchingComps);
     const confidence = Math.min(Math.log10(timesTogether + 1) / Math.log10(101), 1);
     const adjustedWinRate = 50 + (weightedWinrate - 50) * confidence;
     const synergyScore = adjustedWinRate * 0.45 + appearanceRate * 0.40 + confidence * 100 * 0.15;
-
-    const agent = compositions[0].agents.find(a => a.title.toLowerCase() === agentName);
-    if (!agent) return;
-
-    const candidateRole = ROLES[agent.title];
-    if (isPartialMatch && candidateRole && roleCount[candidateRole] >= 2) {
-      return;
-    }
 
     let tag: SynergyTag;
     let explanation: string;
@@ -359,6 +550,28 @@ export const getSynergyRecommendations = (
 
     const role = ROLES[agent.title] || 'Unknown';
 
+    const whyThisPick = generateWhyThisPick(candidateScore, selectedAgents, analysis);
+
+    const rejectedAlternatives: { agentName: string; reason: string }[] = [];
+    sortedCandidates.slice(limit * 2).forEach(([altName, altScore]) => {
+      let reason = '';
+
+      if (altScore.redundancyPenalty > candidateScore.redundancyPenalty) {
+        reason = 'Mayor penalización por redundancia';
+      } else if (altScore.compositionFitScore < candidateScore.compositionFitScore - 10) {
+        reason = 'Menor sinergia con tu equipo';
+      } else if (altScore.proDataScore < candidateScore.proDataScore - 15) {
+        reason = 'Datos pro menos favorables';
+      } else {
+        reason = 'Menor puntuación total';
+      }
+
+      rejectedAlternatives.push({
+        agentName: altName,
+        reason,
+      });
+    });
+
     recommendations.push({
       agent: { ...agent, role: role as any },
       synergyScore,
@@ -369,10 +582,25 @@ export const getSynergyRecommendations = (
       tag,
       explanation,
       isPartialMatch,
+      candidateScore,
+      analysis,
+      patternAnalysis,
+      whyThisPick: patternAnalysis.patternExplanation
+        ? `${patternAnalysis.patternExplanation} ${whyThisPick}`
+        : whyThisPick,
+      pros: candidateScore.pros,
+      cons: candidateScore.cons,
+      rejectedAlternatives: rejectedAlternatives.slice(0, 3),
+      confidence: candidateScore.confidence,
+      matchType: candidateScore.matchType,
     });
   });
 
   return recommendations
-    .sort((a, b) => b.synergyScore - a.synergyScore)
+    .sort((a, b) => b.candidateScore.finalScore - a.candidateScore.finalScore)
     .slice(0, limit);
 };
+
+export { analyzeComposition, getAgentProfile, getScoreBreakdown, calculateCandidateScore };
+export type { CandidateScore } from './tacticalScoring';
+export type { CompositionAnalysis } from './compositionAnalyzer';
