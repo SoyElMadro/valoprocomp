@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# ValoProComp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Herramienta de composición de equipos para Valorant. Ayuda a los jugadores a crear equipos balancedos y óptimos basándose en roles, sinergias entre agentes y mapas.
 
-Currently, two official plugins are available:
+## Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Selección de agentes**: Elige agentes de una lista completa de todos los personajes de Valorant
+- **Selección de mapa**: Selecciona el mapa para obtener recomendaciones específicas
+- **Análisis de composición**: Verifica que el equipo tenga una distribución de roles equilibrada
+- **Recomendaciones inteligentes**: Sugiere agentes que complementan tu composición actual
+- **Explicaciones detalladas**: 이유 Por qué cada recomendación es beneficiosa para tu equipo
 
-## React Compiler
+## Roles disponibles
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Duelista**: Agentes de entrada y fragging
+- **Controlador**: Agentes de utilidad para controlar espacios
+- **Iniciador**: Agentes de información y utilidad táctica
+- **Centinela**: Agentes de defensa y soporte
 
-## Expanding the ESLint configuration
+## Tecnologías
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React 19
+- TypeScript
+- Vite
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Ejecución
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Compilación
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
