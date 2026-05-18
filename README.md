@@ -8,7 +8,7 @@ Herramienta de composición de equipos para Valorant. Ayuda a los jugadores a cr
 - **Selección de mapa**: Selecciona el mapa para obtener recomendaciones específicas
 - **Análisis de composición**: Verifica que el equipo tenga una distribución de roles equilibrada
 - **Recomendaciones inteligentes**: Sugiere agentes que complementan tu composición actual
-- **Explicaciones detalladas**: 이유 Por qué cada recomendación es beneficiosa para tu equipo
+- **Explicaciones detalladas**: Por qué cada recomendación es beneficiosa para tu equipo
 
 ## Roles disponibles
 
