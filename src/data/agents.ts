@@ -29,6 +29,7 @@ export const agents: Agent[] = [
   { thumbnailUrl: '/agents/vyse.avif', title: 'Vyse', role: 'Centinela' },
   { thumbnailUrl: '/agents/waylay.avif', title: 'Waylay', role: 'Duelista' },
   { thumbnailUrl: '/agents/yoru.avif', title: 'Yoru', role: 'Duelista' },
+  { thumbnailUrl: '/agents/miks.webp', title: 'Miks', role: 'Controlador' },
 ];
 
 export const getAgentByName = (name: string): Agent | undefined => {

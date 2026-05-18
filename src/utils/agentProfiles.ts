@@ -55,6 +55,8 @@ export const COMPLEMENTARY_CONTROLLER_PAIRS = [
   ['Omen', 'Harbor'],
   ['Clove', 'Viper'],
   ['Brimstone', 'Harbor'],
+  ['Miks', 'Viper'],
+  ['Miks', 'Harbor'],
 ];
 
 export const REDUNDANT_CONTROLLER_PAIRS = [
@@ -65,23 +67,58 @@ export const REDUNDANT_CONTROLLER_PAIRS = [
   ['Brimstone', 'Clove'],
   ['Astra', 'Clove'],
   ['Harbor', 'Viper'],
+  ['Miks', 'Omen'],
+  ['Miks', 'Brimstone'],
+  ['Miks', 'Astra'],
+  ['Miks', 'Clove'],
 ];
 
 export const isComplementaryControllerPair = (agent1: string, agent2: string): boolean => {
   return COMPLEMENTARY_CONTROLLER_PAIRS.some(
     pair => (pair[0] === agent1 && pair[1] === agent2) ||
-            (pair[0] === agent2 && pair[1] === agent1)
+      (pair[0] === agent2 && pair[1] === agent1)
   );
 };
 
 export const isRedundantControllerPair = (agent1: string, agent2: string): boolean => {
   return REDUNDANT_CONTROLLER_PAIRS.some(
     pair => (pair[0] === agent1 && pair[1] === agent2) ||
-            (pair[0] === agent2 && pair[1] === agent1)
+      (pair[0] === agent2 && pair[1] === agent1)
   );
 };
 
 export const AGENT_PROFILES: Record<string, TacticalProfile> = {
+  Miks: {
+    agentName: 'Miks',
+    role: 'Controlador',
+    subroles: [
+      'primary-smokes',
+      'flex-controller',
+      'execute-support',
+      'support',
+      'healing',
+      'crowd-control',
+      'retake-support',
+      'fast-execute',
+    ],
+    synergiesWith: ['Neon', 'Raze', 'Jett', 'Waylay', 'Tejo', 'Breach', 'KAY/O', 'Gekko'],
+    redundantWith: ['Omen', 'Brimstone', 'Astra', 'Clove'],
+    uniqueStrengths: [
+      'Smokes de controlador para bloquear líneas de visión',
+      'Utilidad de apoyo basada en sonido para coordinar pushes',
+      'Capacidad de curar aliados desde el rol de controlador',
+      'Herramientas de crowd-control para interrumpir posiciones enemigas',
+      'Buen valor en executes rápidos y retakes coordinados',
+    ],
+    weaknesses: [
+      'Puede ser redundante si el equipo ya tiene un controlador de humos principales',
+      'No aporta wall-control persistente como Viper o Harbor',
+      'Necesita coordinación para aprovechar bien su utilidad de soporte',
+      'Puede pisarse con iniciadores de crowd-control si la composición ya tiene demasiado setup',
+    ],
+    description:
+      'Controlador de soporte basado en sonido. Aporta smokes, curación, apoyo al equipo y crowd-control para executes y retakes coordinados.',
+  },
   Omen: {
     agentName: 'Omen',
     role: 'Controlador',
@@ -126,7 +163,7 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     agentName: 'Viper',
     role: 'Controlador',
     subroles: ['secondary-controller', 'wall-controller', 'map-control', 'anchor', 'site-anchor', 'stall', 'postplant'],
-    synergiesWith: ['Omen', 'Brimstone', 'Astra', 'Killjoy', 'Cypher', 'Chamber', 'Sage'],
+    synergiesWith: ['Omen', 'Brimstone', 'Astra', 'Miks', 'Killjoy', 'Cypher', 'Chamber', 'Sage'],
     redundantWith: ['Harbor'],
     uniqueStrengths: [
       'Toxic Screen para control persistente de zonas',
@@ -183,7 +220,7 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     agentName: 'Harbor',
     role: 'Controlador',
     subroles: ['secondary-controller', 'wall-controller', 'execute-support', 'map-control', 'area-denial'],
-    synergiesWith: ['Omen', 'Viper', 'Jett', 'Raze', 'Neon'],
+    synergiesWith: ['Omen', 'Viper', 'Miks', 'Jett', 'Raze', 'Neon'],
     redundantWith: ['Viper'],
     uniqueStrengths: [
       'Coil para control de geometría',
@@ -305,7 +342,7 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     agentName: 'Neon',
     role: 'Duelista',
     subroles: ['entry', 'space-creator', 'mobility-duelist', 'fast-execute'],
-    synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade'],
+    synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade', 'Miks'],
     redundantWith: ['Jett', 'Raze', 'Waylay', 'Yoru'],
     uniqueStrengths: [
       'Fast Slide para peeking agresivo',
@@ -322,7 +359,7 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     agentName: 'Waylay',
     role: 'Duelista',
     subroles: ['entry', 'space-creator', 'mobility-duelist', 'damage-utility', 'clear-space'],
-    synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade'],
+    synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade', 'Miks'],
     redundantWith: ['Neon', 'Jett', 'Raze'],
     uniqueStrengths: [
       'Arc Star para daño en burst',
@@ -426,7 +463,7 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     agentName: 'Tejo',
     role: 'Iniciador',
     subroles: ['damage-utility', 'clear-space', 'execute-support', 'anti-push', 'area-denial'],
-    synergiesWith: ['Omen', 'Brimstone', 'Viper', 'Jett', 'Neon'],
+    synergiesWith: ['Omen', 'Brimstone', 'Viper', 'Jett', 'Neon', 'Miks'],
     redundantWith: ['Skye', 'Breach', 'KAY/O', 'Gekko'],
     uniqueStrengths: [
       'Volatile Charge para execute',
