@@ -54,3 +54,50 @@
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .loading-state {
+    padding: 3rem 1rem;
+    gap: 1rem;
+  }
+
+  .loading-spinner {
+    width: 45px;
+    height: 45px;
+  }
+
+  .spinner-ring:nth-child(2) {
+    inset: 6px;
+  }
+
+  .spinner-ring:nth-child(3) {
+    inset: 12px;
+  }
+
+  .loading-message {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .loading-state {
+    padding: 2rem 0.75rem;
+  }
+
+  .loading-spinner {
+    width: 35px;
+    height: 35px;
+  }
+
+  .spinner-ring:nth-child(2) {
+    inset: 5px;
+  }
+
+  .spinner-ring:nth-child(3) {
+    inset: 10px;
+  }
+
+  .loading-message {
+    font-size: 0.8rem;
+  }
+}

@@ -140,3 +140,74 @@
 .slot-label {
   display: none;
 }
+
+@media (max-width: 768px) {
+  .composition-preview {
+    padding: 0.75rem;
+  }
+
+  .preview-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .preview-header .section-title {
+    font-size: 0.85rem;
+  }
+
+  .clear-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.65rem;
+  }
+
+  .composition-slots {
+    gap: 0.4rem;
+  }
+
+  .slot {
+    width: 48px;
+    border-radius: 8px;
+  }
+
+  .remove-agent-btn {
+    width: 14px;
+    height: 14px;
+    font-size: 0.7rem;
+  }
+
+  .slot-agent-name {
+    font-size: 0.5rem;
+    padding: 0.15rem;
+  }
+
+  .plus-icon {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .composition-preview {
+    padding: 0.5rem;
+  }
+
+  .preview-header .section-title {
+    font-size: 0.8rem;
+  }
+
+  .clear-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6rem;
+  }
+
+  .composition-slots {
+    gap: 0.35rem;
+  }
+
+  .slot {
+    width: 42px;
+    border-radius: 6px;
+  }
+
+  .slot-agent-name {
+    font-size: 0.45rem;
+  }
+}

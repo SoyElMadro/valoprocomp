@@ -537,27 +537,38 @@
   }
 
   .alt-card {
-    grid-template-columns: 25px 35px 1fr auto;
-    padding: 0.5rem;
-    gap: 0.5rem;
+    grid-template-columns: auto 1fr auto;
+    padding: 0.6rem;
+    gap: 0.6rem;
   }
 
   .alt-rank {
-    font-size: 0.75rem;
+    display: none;
   }
 
   .alt-agent-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .alt-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
   }
 
   .alt-name {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
   }
 
   .alt-role {
     font-size: 0.55rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
   }
 
   .alt-stats {
@@ -565,7 +576,11 @@
   }
 
   .alt-tag {
-    display: none;
+    display: block;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
   }
 
   .details-toggle {
@@ -634,23 +649,41 @@
   }
 
   .alt-card {
-    grid-template-columns: 20px 30px 1fr;
+    grid-template-columns: auto 1fr auto;
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
 
   .alt-rank {
-    font-size: 0.7rem;
+    display: none;
   }
 
   .alt-agent-img {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+  }
+
+  .alt-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    align-items: flex-start;
   }
 
   .alt-name {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
   .alt-role {
     font-size: 0.5rem;
+  }
+
+  .alt-tag {
+    display: block;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
   }
 }
