@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Agent } from './types';
 import { Header } from './components/Header';
 import { MapSelector } from './components/MapSelector';
@@ -15,8 +15,21 @@ import { getMapName } from './data/maps';
 import './App.css';
 
 function App() {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('valoprocomp-theme');
+    return (saved as 'dark' | 'light') || 'dark';
+  });
   const [selectedMap, setSelectedMap] = useState<number | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('valoprocomp-theme', theme);
+  }, [theme]);
+
+  const handleThemeToggle = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   const { compositions, loading, error, refetch } = useCompositions(selectedMap);
 
@@ -63,7 +76,7 @@ function App() {
         <div className="bg-grid" />
       </div>
 
-      <Header />
+      <Header theme={theme} onThemeToggle={handleThemeToggle} />
 
       <main className="main-content">
         <div className="dashboard-layout">
@@ -86,6 +99,8 @@ function App() {
                   onSelectAgent={handleSelectAgent}
                   onRemoveAgent={handleRemoveAgent}
                 />
+
+                
               </>
             )}
           </aside>

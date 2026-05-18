@@ -19,12 +19,19 @@
     radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
 }
 
+[data-theme="light"] .bg-gradient {
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(225, 29, 72, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 60%);
+}
+
 .bg-grid {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
 }
@@ -59,8 +66,8 @@
 .welcome-message {
   text-align: center;
   padding: 5rem 2rem;
-  background: rgba(30, 30, 45, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 24px;
   margin-top: 2rem;
 }
@@ -74,13 +81,13 @@
 .welcome-message h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: white;
+  color: var(--color-text);
   margin: 0 0 0.75rem;
 }
 
 .welcome-message p {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-muted);
   margin: 0;
   max-width: 400px;
   margin: 0 auto;

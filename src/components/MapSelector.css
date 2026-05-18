@@ -3,9 +3,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: rgba(30, 30, 45, 0.6);
+  background: var(--color-bg-card);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
 }
 
 .map-label {
@@ -14,12 +14,12 @@
   gap: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text);
   margin-bottom: 0.25rem;
 }
 
 .title-icon {
-  color: #f43f5e;
+  color: var(--color-primary);
   font-size: 1rem;
 }
 
@@ -27,32 +27,36 @@
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
   font-weight: 500;
-  color: white;
-  background: rgba(30, 30, 45, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.6)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 2.5rem;
 }
 
+[data-theme="light"] .map-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230f0f17' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+}
+
 .map-select:hover {
-  border-color: rgba(244, 63, 94, 0.5);
+  border-color: var(--color-border-hover);
 }
 
 .map-select:focus {
   outline: none;
-  border-color: #f43f5e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
 }
 
 .map-select option {
-  background: #1e1e2d;
-  color: white;
+  background: var(--color-bg-dark);
+  color: var(--color-white);
   padding: 0.5rem;
 }
 

@@ -1,8 +1,8 @@
 .agent-selector {
   padding: 1rem;
-  background: rgba(30, 30, 45, 0.6);
+  background: var(--color-bg-card);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
 }
 
 .role-filters {
@@ -13,25 +13,25 @@
 }
 
 .role-filter-btn {
-  background: rgba(30, 30, 45, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 0.35rem 0.6rem;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .role-filter-btn:hover {
-  border-color: rgba(244, 63, 94, 0.5);
-  color: white;
+  border-color: var(--color-border-hover);
+  color: var(--color-text);
 }
 
 .role-filter-btn.active {
-  background: #f43f5e;
-  border-color: #f43f5e;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
@@ -41,13 +41,13 @@
   gap: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: var(--color-text);
   margin-bottom: 1rem;
   margin-top: 0;
 }
 
 .title-icon {
-  color: #f43f5e;
+  color: var(--color-primary);
   font-size: 1rem;
 }
 
@@ -55,8 +55,8 @@
   margin-left: auto;
   font-size: 0.7rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-dim);
+  background: var(--color-bg-card-hover);
   padding: 0.2rem 0.6rem;
   border-radius: 10px;
 }
@@ -69,8 +69,8 @@
 
 .agent-card {
   position: relative;
-  background: rgba(30, 30, 45, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   overflow: hidden;
   cursor: pointer;
@@ -82,12 +82,12 @@
 
 .agent-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(244, 63, 94, 0.5);
-  box-shadow: 0 4px 15px rgba(244, 63, 94, 0.2);
+  border-color: var(--color-border-hover);
+  box-shadow: 0 4px 15px var(--color-shadow);
 }
 
 .agent-card.selected {
-  border-color: #f43f5e;
+  border-color: var(--color-primary);
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
 }
 
@@ -95,6 +95,8 @@
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
+  object-position: center top;
+  background: var(--color-bg-input);
 }
 
 .agent-card:hover .agent-image {
@@ -105,9 +107,9 @@
   padding: 0.35rem;
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text);
   text-align: center;
-  background: rgba(20, 20, 30, 0.9);
+  background: var(--color-input-bg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -131,7 +133,7 @@
 .check-icon {
   font-size: 1.5rem;
   color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 10px var(--color-shadow);
 }
 
 @media (max-width: 768px) {
