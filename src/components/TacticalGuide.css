@@ -1,0 +1,722 @@
+.tactical-guide {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.tactical-guide__header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tactical-guide__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tactical-guide__title-icon {
+  font-size: 1.1rem;
+}
+
+.tactical-guide__subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.tactical-guide__fallback-label {
+  color: var(--color-text-dim);
+  font-style: italic;
+}
+
+.tactical-guide__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tactical-guide__tab {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.tactical-guide__tab:hover {
+  color: var(--color-text);
+}
+
+.tactical-guide__tab--active {
+  color: var(--color-primary);
+}
+
+.tactical-guide__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-primary);
+}
+
+.tactical-guide__content {
+  padding: 1.25rem 1.5rem;
+}
+
+.tactical-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tactical-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.tactical-grid--2col {
+  grid-template-columns: 1fr 1fr;
+}
+
+.tactical-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tactical-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tactical-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.tactical-card__heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.tactical-card__text {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 0.5rem;
+}
+
+.tactical-card__body {
+  padding: 1rem;
+}
+
+.tactical-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tactical-bullets li {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.tactical-bullets li::before {
+  content: '\2022';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+.tactical-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.tactical-badge--documented {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.tactical-badge--partial {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.tactical-badge--needs-review {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.tactical-badge--no-source {
+  background: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.tactical-badge--fallback {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.tactical-badge--duelist {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.tactical-badge--initiator {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tactical-badge--controller {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.tactical-badge--sentinel {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.tactical-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.tactical-banner--info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--color-text-muted);
+}
+
+.tactical-banner--warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  color: var(--color-text-muted);
+}
+
+.tactical-banner--fallback {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: var(--color-text-muted);
+}
+
+.tactical-banner--empty {
+  background: rgba(156, 163, 175, 0.1);
+  border: 1px solid rgba(156, 163, 175, 0.2);
+  color: var(--color-text-dim);
+}
+
+.tactical-agent-job {
+  margin-bottom: 0.75rem;
+}
+
+.tactical-agent-job:last-child {
+  margin-bottom: 0;
+}
+
+.tactical-agent-job__name {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+}
+
+.tactical-agent-job__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tactical-agent-job__list li {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.tactical-agent-job__list li::before {
+  content: '\2022';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+}
+
+.tactical-steps {
+  margin-top: 0.75rem;
+}
+
+.tactical-steps h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.tactical-step {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.tactical-step__by {
+  font-weight: 600;
+  color: var(--color-primary);
+  min-width: 80px;
+}
+
+.tactical-step__action {
+  color: var(--color-text);
+}
+
+.tactical-step__zone {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.tactical-step__timing {
+  color: var(--color-text-dim);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.tactical-step__purpose {
+  color: var(--color-text-muted);
+  flex-basis: 100%;
+  margin-top: 0.15rem;
+}
+
+.tactical-positions {
+  margin-top: 0.75rem;
+}
+
+.tactical-positions h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.tactical-positions__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tactical-position {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text-muted);
+}
+
+.tactical-win-conditions,
+.tactical-fail-conditions,
+.tactical-counters,
+.tactical-combos,
+.tactical-patch-effects {
+  margin-top: 0.75rem;
+}
+
+.tactical-win-conditions h4,
+.tactical-fail-conditions h4,
+.tactical-counters h4,
+.tactical-combos h4,
+.tactical-patch-effects h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem;
+}
+
+.tactical-patch-effect {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.tactical-patch-effect__patch {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.25rem;
+}
+
+.tactical-patch-effect p {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.25rem;
+  line-height: 1.4;
+}
+
+.tactical-patch-effect__impact {
+  font-style: italic;
+  color: var(--color-text-dim);
+}
+
+.tactical-map-tactic {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tactical-map-tactic:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tactical-map-tactic:first-child {
+  padding-top: 0;
+}
+
+.tactical-map-tactic__site {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  margin-right: 0.5rem;
+}
+
+.tactical-map-tactic__side {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+}
+
+.tactical-map-tactic__summary {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  margin: 0.35rem 0 0;
+  line-height: 1.4;
+}
+
+.tactical-agent-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tactical-agent-card__header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tactical-agent-card__info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tactical-agent-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tactical-agent-card__body {
+  padding: 1rem;
+}
+
+.tactical-agent-card__overview {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.tactical-agent-card__best,
+.tactical-agent-card__avoid {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.tactical-agent-card__best strong,
+.tactical-agent-card__avoid strong {
+  color: var(--color-text);
+}
+
+.tactical-agent-card__site {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.tactical-agent-card__site:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.tactical-agent-card__site h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+}
+
+.tactical-agent-card__role {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+  font-style: italic;
+}
+
+.tactical-agent-card__plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tactical-agent-card__plan h5 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tactical-agent-card__combos,
+.tactical-agent-card__priorities,
+.tactical-agent-card__counters {
+  margin-top: 0.75rem;
+}
+
+.tactical-agent-card__combos h5,
+.tactical-agent-card__priorities h5,
+.tactical-agent-card__counters h5 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tactical-role-fallback {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tactical-role-fallback__section h4 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tactical-role-fallback__overview {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.tactical-role-fallback__overview strong {
+  color: var(--color-text);
+}
+
+.tactical-sources__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tactical-sources__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+}
+
+.tactical-sources__label {
+  color: var(--color-text-muted);
+}
+
+.tactical-sources__value {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.tactical-sources__statuses {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tactical-sources__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+
+.tactical-sources__item-label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.tactical-mini-agent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+
+.tactical-mini-agent__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .tactical-guide__header {
+    padding: 1rem 1.25rem;
+  }
+
+  .tactical-guide__content {
+    padding: 1rem 1.25rem;
+  }
+
+  .tactical-guide__tab {
+    padding: 0.65rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .tactical-grid--2col {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-agent-card__plans {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-role-fallback {
+    grid-template-columns: 1fr;
+  }
+
+  .tactical-step {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .tactical-step__by {
+    min-width: auto;
+  }
+
+  .tactical-agent-card__info {
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tactical-guide__header {
+    padding: 0.75rem 1rem;
+  }
+
+  .tactical-guide__title {
+    font-size: 1.1rem;
+  }
+
+  .tactical-guide__subtitle {
+    font-size: 0.8rem;
+  }
+
+  .tactical-guide__content {
+    padding: 0.75rem 1rem;
+  }
+
+  .tactical-card__header {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tactical-card__body {
+    padding: 0.75rem;
+  }
+
+  .tactical-card__title {
+    font-size: 0.875rem;
+  }
+
+  .tactical-bullets li {
+    font-size: 0.8rem;
+  }
+
+  .tactical-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+  }
+}

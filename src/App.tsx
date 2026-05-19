@@ -12,6 +12,7 @@ import { useCompositions } from './hooks/useCompositions';
 import { scoreCompositions, getTopCompositions, getSynergyRecommendations } from './utils/recommendationEngine';
 import { RecommendationExplanation } from './components/RecommendationExplanation';
 import { getMapName } from './data/maps';
+import { TacticalGuide } from './components/TacticalGuide';
 import './App.css';
 
 function App() {
@@ -128,6 +129,13 @@ function App() {
                   selectedAgents={selectedAgents}
                   mapName={getMapName(selectedMap)}
                 />
+
+                {selectedAgents.length > 0 && (
+                  <TacticalGuide
+                    selectedMap={selectedMap}
+                    selectedAgents={selectedAgents}
+                  />
+                )}
               </>
             )}
 
