@@ -1,11 +1,21 @@
-import type { Composition, Agent, ScoredComposition, RecommendedAgent, CompositionTag, SynergyRecommendation, SynergyTag } from '../types';
-import { getAgentProfile } from './agentProfiles';
+import type { Agent, Composition, ScoredComposition, RecommendedAgent, CompositionTag, SynergyRecommendation, SynergyTag } from '../types';
+import { getAgentProfile, getControllerSubrole } from './agentProfiles';
 import { analyzeComposition, type CompositionAnalysis } from './compositionAnalyzer';
-import { calculateCandidateScore, getScoreBreakdown } from './tacticalScoring';
+import { calculateCandidateScore } from './tacticalScoring';
 import type { CandidateScore } from './tacticalScoring';
 import { analyzeRolePatterns, type RolePatternAnalysis } from './rolePatternAnalyzer';
+import {
+  getMissingFunctionsForMap,
+  getMapDescription,
+  getFullAgentProfile,
+  getBestMaps,
+  getWeakMaps,
+  type ActiveMapName,
+} from './mapAgentIntelligence';
+import { getAgentMapGuide } from '../data/tactical-guides/agentMapGuides';
 
 const ROLES: Record<string, string> = {
+  Miks: 'Controlador',
   Astra: 'Controlador',
   Breach: 'Iniciador',
   Brimstone: 'Controlador',
@@ -224,6 +234,13 @@ export interface TacticalRecommendation extends SynergyRecommendation {
   rejectedAlternatives: { agentName: string; reason: string }[];
   confidence: 'high' | 'medium' | 'low';
   matchType: 'exact' | 'partial';
+  mapFitBoost: number;
+  guideNotes: string[];
+  recommendationStrength: 'must-pick' | 'highly-recommended' | 'recommended' | 'situational' | 'risky';
+  bestMaps: string[];
+  directReplacements: string[];
+  utilityDescription: string;
+  proMetaInfo: string;
 }
 
 const getRecommendationLabel = (params: {
@@ -238,102 +255,180 @@ const getRecommendationLabel = (params: {
   if (timesTogether <= 2 && weightedWinrate >= 70) {
     return {
       tag: 'Winrate inflado por poca muestra',
-      explanation: `Con solo ${timesTogether} partidas no hay suficiente data. El winrate alto puede ser casualidad.`
+      explanation: `Con solo ${timesTogether} partidas no hay suficiente data. El winrate alto puede ser casualidad.`,
     };
   }
 
   if (timesTogether < 3) {
     return {
       tag: 'Dato limitado',
-      explanation: `Muy pocas composiciones con este agente junto a los tuyos. Consideralo solo como opción adicional.`
+      explanation: `Muy pocas composiciones con este agente junto a los tuyos. Consideralo solo como opción adicional.`,
     };
   }
 
   if (synergyScore >= 75 && timesTogether >= 15) {
     return {
       tag: 'Mejor sinergia',
-      explanation: `Excelente combinación: aparece frecuentemente con tus agentes y tiene buen winrate.`
+      explanation: `Excelente combinación: aparece frecuentemente con tus agentes y tiene buen winrate.`,
     };
   }
 
   if (appearanceRate >= 40 && timesTogether >= 10) {
     return {
       tag: 'Pick meta',
-      explanation: `Un pick muy popular que funciona bien con tu equipo. Alta frecuencia de aparición en el meta.`
+      explanation: `Un pick muy popular que funciona bien con tu equipo. Alta frecuencia de aparición en el meta.`,
     };
   }
 
   if (adjustedWinrate >= 54 && timesTogether >= 8) {
     return {
       tag: 'Pick fuerte',
-      explanation: `Buen winrate ajustado con cantidad de partidas decente. Recomendable para composiciones sólidas.`
+      explanation: `Buen winrate ajustado con cantidad de partidas decente. Recomendable para composiciones sólidas.`,
     };
   }
 
   if (synergyScore >= 60) {
     return {
       tag: 'Pick recomendable',
-      explanation: `Buena opción para completar tu equipo con stats aceptables.`
+      explanation: `Buena opción para completar tu equipo con stats aceptables.`,
     };
   }
 
   if (timesTogether < 8 && adjustedWinrate >= 55) {
     return {
       tag: 'Prometedor, poca muestra',
-      explanation: `El winrate es bueno pero la muestra es limitada. Podría ser una opción interesante.`
+      explanation: `El winrate es bueno pero la muestra es limitada. Podría ser una opción interesante.`,
     };
   }
 
   return {
     tag: 'Pick situacional',
-    explanation: `Funciona en algunos contextos específicos. Evalúa según tu estilo de juego.`
+    explanation: `Funciona en algunos contextos específicos. Evalúa según tu estilo de juego.`,
   };
 };
 
 const generateWhyThisPick = (
-  candidate: CandidateScore,
+  candidate: Agent,
   selectedAgents: Agent[],
-  analysis: CompositionAnalysis
+  analysis: CompositionAnalysis,
+  mapId?: string
 ): string => {
-  const profile = getAgentProfile(candidate.agent.title);
+  const profile = getAgentProfile(candidate.title);
+  const fullProfile = getFullAgentProfile(candidate.title);
   if (!profile) return '';
-
-  const selectedProfiles = selectedAgents
-    .map(a => getAgentProfile(a.title))
-    .filter(Boolean);
 
   const parts: string[] = [];
 
-  if (analysis.needs.missingRoles.includes(profile.role)) {
-    parts.push(`Tu equipo necesita un ${profile.role} y ${candidate.agent.title} lo provee.`);
+  if (mapId) {
+    const mapDescription = getMapDescription(mapId as ActiveMapName);
+    parts.push(`Mapa: ${mapDescription}`);
+
+    const missingFunctions = getMissingFunctionsForMap(selectedAgents, mapId as ActiveMapName);
+    if (missingFunctions.length > 0) {
+      parts.push(`Tu equipo necesita: ${missingFunctions.join(', ')}.`);
+    }
   }
 
-  if (profile.subroles.includes('wall-controller') && analysis.needs.hasPrimarySmokes) {
-    parts.push(`${candidate.agent.title} añade control de paredes y mapa sin duplicar el rol de smokes primarios.`);
+  if (analysis.needs.missingRoles.includes(profile.role)) {
+    parts.push(`Tu equipo necesita un ${profile.role} y ${candidate.title} lo provee.`);
+  }
+
+  if (fullProfile) {
+    const selectedNames = selectedAgents.map(a => a.title);
+    const synergies = fullProfile.bestWith.filter(name =>
+      selectedNames.some(s => s.toLowerCase() === name.toLowerCase())
+    );
+    if (synergies.length > 0) {
+      parts.push(`Según datos pro, sinergiza especialmente con: ${synergies.join(', ')}.`);
+    }
+
+    const directReplacement = fullProfile.directReplacements;
+    const anyReplacementUsed = selectedNames.some(name =>
+      directReplacement.some(r => r.toLowerCase() === name.toLowerCase())
+    );
+    if (anyReplacementUsed) {
+      parts.push(`NOTA: ${candidate.title} es reemplazo directo de un agente ya seleccionado.`);
+    }
+  }
+
+  if (profile.role === 'Controlador') {
+    const candidateSubrole = getControllerSubrole(candidate.title);
+
+    if (candidateSubrole === 'wallPlace' && analysis.needs.hasSmokeBlock && !analysis.needs.hasWallPlace) {
+      parts.push(`${candidate.title} (wall-place) complementa perfectamente a tu controlador de smokes.`);
+    }
+
+    if (candidateSubrole === 'smokeBlock' && analysis.needs.hasWallPlace && !analysis.needs.hasSmokeBlock) {
+      parts.push(`${candidate.title} (smoke-block) complementa tu controlador de pared.`);
+    }
+
+    if ((candidateSubrole === 'smokeBlock' && analysis.needs.hasSmokeBlock && !analysis.needs.hasWallPlace) ||
+        (candidateSubrole === 'wallPlace' && analysis.needs.hasWallPlace && !analysis.needs.hasSmokeBlock)) {
+      parts.push(`ATENCION: ${candidate.title} no complementa - necesitas un controlador del tipo opuesto.`);
+    }
   }
 
   const filledFunctions = profile.subroles.filter(
     sub => analysis.needs.missingTacticalFunctions.includes(sub)
   );
   if (filledFunctions.length > 0) {
-    parts.push(`Añade: ${filledFunctions.join(', ')}.`);
-  }
-
-  if (selectedProfiles.length > 0) {
-    const synergies = selectedProfiles
-      .filter(p => p && profile.synergiesWith.includes(p.agentName))
-      .map(p => p!.agentName);
-    if (synergies.length > 0) {
-      parts.push(`Sinergiza bien con: ${synergies.join(', ')}.`);
-    }
+    parts.push(`Añade funciones al equipo: ${filledFunctions.join(', ')}.`);
   }
 
   if (analysis.needs.duplicatedRoles.includes(profile.role)) {
     const existing = selectedAgents.filter(a => getAgentProfile(a.title)?.role === profile.role);
-    parts.push(`NOTA: Ya tienes ${existing.map(a => a.title).join(', ')} - ${candidate.agent.title} es redundante en rol.`);
+    parts.push(`NOTA: Ya tienes ${existing.map(a => a.title).join(', ')} roles duplicados.`);
+  }
+
+  if (fullProfile && mapId) {
+    const mapRating = getBestMaps(candidate.title).find(m => m.map === mapId);
+    if (mapRating) {
+      parts.push(`Rating en este mapa: ${mapRating.score}/10 - excelente elección.`);
+    } else {
+      const weakMap = getWeakMaps(candidate.title).find(m => m.map === mapId);
+      if (weakMap) {
+        parts.push(`Rating en este mapa: ${weakMap.score}/10 - no es ideal.`);
+      }
+    }
+  }
+
+  if (fullProfile) {
+    parts.push(`Estilo: ${fullProfile.playstyle}`);
   }
 
   return parts.join(' ');
+};
+
+const getControllerRecommendationBoost = (
+  candidate: Agent,
+  _selectedAgents: Agent[],
+  analysis: CompositionAnalysis
+): number => {
+  const profile = getAgentProfile(candidate.title);
+  if (!profile || profile.role !== 'Controlador') return 0;
+
+  const candidateSubrole = getControllerSubrole(candidate.title);
+  const { controllerSubroleTypes } = analysis.needs;
+
+  let boost = 0;
+
+  if (candidateSubrole === 'wallPlace' && controllerSubroleTypes.includes('smokeBlock') && !controllerSubroleTypes.includes('wallPlace')) {
+    boost += 40;
+  }
+
+  if (candidateSubrole === 'smokeBlock' && controllerSubroleTypes.includes('wallPlace') && !controllerSubroleTypes.includes('smokeBlock')) {
+    boost += 40;
+  }
+
+  if (candidateSubrole === 'smokeBlock' && controllerSubroleTypes.includes('smokeBlock') && !controllerSubroleTypes.includes('wallPlace')) {
+    boost -= 50;
+  }
+
+  if (candidateSubrole === 'wallPlace' && controllerSubroleTypes.includes('wallPlace') && !controllerSubroleTypes.includes('smokeBlock')) {
+    boost -= 50;
+  }
+
+  return boost;
 };
 
 export const getSynergyRecommendations = (
@@ -375,8 +470,6 @@ export const getSynergyRecommendations = (
     });
   });
 
-  const recommendations: TacticalRecommendation[] = [];
-
   const candidateScores: Map<string, CandidateScore> = new Map();
 
   candidateNames.forEach(agentName => {
@@ -399,21 +492,39 @@ export const getSynergyRecommendations = (
     const candidateProfile = getAgentProfile(agent.title);
     const candidateRole = candidateProfile?.role ? ROLES[agent.title] : undefined;
 
-    if (candidateRole === 'Controlador' && roleCount['Controlador'] >= 2) {
-      return;
-    }
+    if (candidateRole === 'Controlador') {
+      const candidateSubrole = getControllerSubrole(agent.title);
+      const { controllerSubroleTypes } = analysis.needs;
 
-    if (isPartialMatch && candidateRole && roleCount[candidateRole] >= 2) {
-      const hasStrongJustification = candidateProfile?.subroles.includes('wall-controller') ||
-        candidateProfile?.subroles.includes('anchor') ||
-        candidateProfile?.subroles.includes('postplant');
+      if (candidateSubrole === 'smokeBlock' && controllerSubroleTypes.includes('smokeBlock') && !controllerSubroleTypes.includes('wallPlace')) {
+        return;
+      }
 
-      if (!hasStrongJustification) {
+      if (candidateSubrole === 'wallPlace' && controllerSubroleTypes.includes('wallPlace') && !controllerSubroleTypes.includes('smokeBlock')) {
         return;
       }
     }
 
-    const candidateScore = calculateCandidateScore(
+    if (candidateRole === 'Iniciador' && roleCount['Iniciador'] >= 2) {
+      const hasFlash = candidateProfile?.subroles.includes('flash-initiator');
+      const hasRecon = candidateProfile?.subroles.includes('recon-initiator');
+      if (!hasFlash && !hasRecon) {
+        return;
+      }
+    }
+
+    if (candidateRole === 'Duelista' && roleCount['Duelista'] >= 2) {
+      if (candidateProfile) {
+        const hasUnique = candidateProfile.redundantWith.every(
+          r => !selectedAgents.some(s => s.title === r)
+        );
+        if (!hasUnique) {
+          return;
+        }
+      }
+    }
+
+    let candidateScore = calculateCandidateScore(
       agent,
       selectedAgents,
       candidateMatchingComps,
@@ -423,93 +534,21 @@ export const getSynergyRecommendations = (
       patternAnalysis
     );
 
+    if (candidateRole === 'Controlador') {
+      const controllerBoost = getControllerRecommendationBoost(agent, selectedAgents, analysis);
+      candidateScore.finalScore += controllerBoost;
+      candidateScore.mapBoost += controllerBoost;
+    }
+
     candidateScores.set(agentName, candidateScore);
   });
 
   const sortedCandidates = Array.from(candidateScores.entries())
     .sort((a, b) => b[1].finalScore - a[1].finalScore);
 
-  const criticalMissingFunctions = ['anchor', 'wall-controller', 'postplant', 'map-control'];
-  const missingFunctions = analysis.needs.missingTacticalFunctions;
-  const hasCriticalNeeds = criticalMissingFunctions.some(
-    func => missingFunctions.includes(func as any)
-  ) || (!analysis.needs.hasSentinelAnchor && !analysis.needs.hasWallController);
-
-  const hasOmen = selectedAgents.some(a => a.title.toLowerCase() === 'omen');
-  const needsWallController = !analysis.needs.hasWallController;
-  const hasTwoControllers = roleCount['Controlador'] >= 2;
-
-  if (!hasTwoControllers && hasOmen && needsWallController && compositions[0]?.agents) {
-    const viperAgent = compositions[0].agents.find(a => a.title.toLowerCase() === 'viper');
-    if (viperAgent) {
-      const alreadyHasViper = sortedCandidates.some(([name]) => name.toLowerCase() === 'viper');
-      if (!alreadyHasViper) {
-        const viperScore = calculateCandidateScore(
-          viperAgent,
-          selectedAgents,
-          [],
-          mapId,
-          analysis,
-          true,
-          patternAnalysis
-        );
-
-        sortedCandidates.unshift(['viper', viperScore]);
-        sortedCandidates.sort((a, b) => b[1].finalScore - a[1].finalScore);
-      }
-    }
-  }
-
-  const topCoversCriticalNeed = sortedCandidates.length > 0 && sortedCandidates.slice(0, 2).some(([name]) => {
-    const profile = getAgentProfile(name);
-    return profile?.subroles.some(sub => criticalMissingFunctions.includes(sub));
-  });
-
-  if (!hasTwoControllers && hasCriticalNeeds && !topCoversCriticalNeed && compositions[0]?.agents) {
-    const allAgents = compositions[0].agents;
-    const selectedNamesLower = selectedNames.map(n => n.toLowerCase());
-
-    const candidatesForCriticalNeeds = allAgents
-      .filter(agent => !selectedNamesLower.includes(agent.title.toLowerCase()))
-      .filter(agent => {
-        const profile = getAgentProfile(agent.title);
-        return profile?.role !== 'Controlador';
-      })
-      .map(agent => {
-        const profile = getAgentProfile(agent.title);
-        if (!profile) return null;
-
-        const coversCriticalNeed = profile.subroles.some(sub =>
-          criticalMissingFunctions.includes(sub)
-        );
-
-        if (!coversCriticalNeed) return null;
-
-        const score = calculateCandidateScore(
-          agent,
-          selectedAgents,
-          [],
-          mapId,
-          analysis,
-          true,
-          patternAnalysis
-        );
-
-        return { agent, score };
-      })
-      .filter(Boolean) as { agent: Agent; score: CandidateScore }[];
-
-    candidatesForCriticalNeeds.forEach(({ agent, score }) => {
-      const existingIndex = sortedCandidates.findIndex(([name]) => name.toLowerCase() === agent.title.toLowerCase());
-      if (existingIndex === -1) {
-        sortedCandidates.push([agent.title, score]);
-      }
-    });
-
-    sortedCandidates.sort((a, b) => b[1].finalScore - a[1].finalScore);
-  }
-
   const topCandidates = sortedCandidates.slice(0, limit * 2);
+
+  const recommendations: TacticalRecommendation[] = [];
 
   topCandidates.forEach(([agentName, candidateScore]) => {
     const agent = compositions[0].agents.find(a => a.title.toLowerCase() === agentName);
@@ -524,7 +563,7 @@ export const getSynergyRecommendations = (
       0
     );
 
-    const appearanceRate = (timesTogether / totalBaseUses) * 100;
+    const appearanceRate = totalBaseUses > 0 ? (timesTogether / totalBaseUses) * 100 : 0;
     const weightedWinrate = calculateWeightedWinrate(candidateMatchingComps);
     const confidence = Math.min(Math.log10(timesTogether + 1) / Math.log10(101), 1);
     const adjustedWinRate = 50 + (weightedWinrate - 50) * confidence;
@@ -550,27 +589,52 @@ export const getSynergyRecommendations = (
 
     const role = ROLES[agent.title] || 'Unknown';
 
-    const whyThisPick = generateWhyThisPick(candidateScore, selectedAgents, analysis);
+    const whyThisPick = generateWhyThisPick(agent, selectedAgents, analysis, mapId);
 
     const rejectedAlternatives: { agentName: string; reason: string }[] = [];
     sortedCandidates.slice(limit * 2).forEach(([altName, altScore]) => {
       let reason = '';
 
-      if (altScore.redundancyPenalty > candidateScore.redundancyPenalty) {
+      if (altScore.redundancyPenalty > candidateScore.redundancyPenalty + 10) {
         reason = 'Mayor penalización por redundancia';
-      } else if (altScore.compositionFitScore < candidateScore.compositionFitScore - 10) {
+      } else if (altScore.compositionFitScore < candidateScore.compositionFitScore - 15) {
         reason = 'Menor sinergia con tu equipo';
-      } else if (altScore.proDataScore < candidateScore.proDataScore - 15) {
+      } else if (altScore.proDataScore < candidateScore.proDataScore - 20) {
         reason = 'Datos pro menos favorables';
+      } else if (altScore.mapFitScore < candidateScore.mapFitScore - 15) {
+        reason = 'Peor adaptación al mapa';
       } else {
         reason = 'Menor puntuación total';
       }
 
-      rejectedAlternatives.push({
-        agentName: altName,
-        reason,
-      });
+      rejectedAlternatives.push({ agentName: altName, reason });
     });
+
+    const guideNotes: string[] = [];
+    if (mapId) {
+      const guide = getAgentMapGuide(agent.title as any, mapId as any);
+      if (guide.overview) {
+        guideNotes.push(guide.overview);
+      }
+      if (guide.bestWith.length > 0) {
+        guideNotes.push(`Mejores aliados según guías: ${guide.bestWith.join(', ')}`);
+      }
+    }
+
+    const fullProfile = getFullAgentProfile(agent.title);
+    const bestMaps = fullProfile
+      ? getBestMaps(agent.title).slice(0, 3).map(m => `${m.map} (${m.score}/10)`)
+      : [];
+    const directReplacements = fullProfile?.directReplacements || [];
+
+    let proMetaInfo = '';
+    if (fullProfile) {
+      proMetaInfo = `Pro: ${fullProfile.proPickRate}% pick, ${fullProfile.proWinRate}% win`;
+    }
+
+    const utilityDescription = fullProfile
+      ? fullProfile.utility.join(', ')
+      : '';
 
     recommendations.push({
       agent: { ...agent, role: role as any },
@@ -593,14 +657,26 @@ export const getSynergyRecommendations = (
       rejectedAlternatives: rejectedAlternatives.slice(0, 3),
       confidence: candidateScore.confidence,
       matchType: candidateScore.matchType,
+      mapFitBoost: candidateScore.mapBoost,
+      guideNotes,
+      recommendationStrength: candidateScore.recommendationStrength,
+      bestMaps,
+      directReplacements,
+      utilityDescription,
+      proMetaInfo,
     });
   });
 
   return recommendations
-    .sort((a, b) => b.candidateScore.finalScore - a.candidateScore.finalScore)
+    .sort((a, b) => {
+      const strengthOrder = { 'must-pick': 0, 'highly-recommended': 1, recommended: 2, situational: 3, risky: 4 };
+      const diff = (strengthOrder[a.recommendationStrength] || 0) - (strengthOrder[b.recommendationStrength] || 0);
+      if (diff !== 0) return diff;
+      return b.candidateScore.finalScore - a.candidateScore.finalScore;
+    })
     .slice(0, limit);
 };
 
-export { analyzeComposition, getAgentProfile, getScoreBreakdown, calculateCandidateScore };
+export { analyzeComposition, getAgentProfile, calculateCandidateScore };
 export type { CandidateScore } from './tacticalScoring';
 export type { CompositionAnalysis } from './compositionAnalyzer';

@@ -31,6 +31,7 @@ export interface RolePatternAnalysis {
 
 export const getRoleFromAgent = (agent: Agent): 'controller' | 'initiator' | 'duelist' | 'sentinel' => {
   const roleMap: Record<string, 'controller' | 'initiator' | 'duelist' | 'sentinel'> = {
+    Miks: 'controller',
     Astra: 'controller',
     Brimstone: 'controller',
     Viper: 'controller',

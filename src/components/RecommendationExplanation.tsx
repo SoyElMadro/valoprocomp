@@ -90,51 +90,51 @@ export const RecommendationExplanation = ({ recommendations }: RecommendationExp
                       <div className="breakdown-bar">
                         <div
                           className="bar-fill pro-data"
-                          style={{ width: `${rec.candidateScore.proDataScore}%` }}
+                          style={{ width: `${rec.candidateScore.proDataScore ?? 0}%` }}
                         />
                       </div>
-                      <span className="breakdown-value">{rec.candidateScore.proDataScore.toFixed(1)}</span>
+                      <span className="breakdown-value">{(rec.candidateScore.proDataScore ?? 0).toFixed(1)}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="breakdown-label">Fit Compositivo (30%)</span>
                       <div className="breakdown-bar">
                         <div
                           className="bar-fill composition-fit"
-                          style={{ width: `${rec.candidateScore.compositionFitScore}%` }}
+                          style={{ width: `${rec.candidateScore.compositionFitScore ?? 0}%` }}
                         />
                       </div>
-                      <span className="breakdown-value">{rec.candidateScore.compositionFitScore.toFixed(1)}</span>
+                      <span className="breakdown-value">{(rec.candidateScore.compositionFitScore ?? 0).toFixed(1)}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="breakdown-label">Necesidad de Rol (15%)</span>
                       <div className="breakdown-bar">
                         <div
                           className="bar-fill role-need"
-                          style={{ width: `${rec.candidateScore.roleNeedScore}%` }}
+                          style={{ width: `${rec.candidateScore.roleNeedScore ?? 0}%` }}
                         />
                       </div>
-                      <span className="breakdown-value">{rec.candidateScore.roleNeedScore.toFixed(1)}</span>
+                      <span className="breakdown-value">{(rec.candidateScore.roleNeedScore ?? 0).toFixed(1)}</span>
                     </div>
                     <div className="breakdown-item">
                       <span className="breakdown-label">Identidad de Mapa (10%)</span>
                       <div className="breakdown-bar">
                         <div
                           className="bar-fill map-identity"
-                          style={{ width: `${rec.candidateScore.mapIdentityScore}%` }}
+                          style={{ width: `${rec.candidateScore.mapIdentityScore ?? 0}%` }}
                         />
                       </div>
-                      <span className="breakdown-value">{rec.candidateScore.mapIdentityScore.toFixed(1)}</span>
+                      <span className="breakdown-value">{(rec.candidateScore.mapIdentityScore ?? 0).toFixed(1)}</span>
                     </div>
-                    {rec.candidateScore.redundancyPenalty > 0 && (
+                    {(rec.candidateScore.redundancyPenalty ?? 0) > 0 && (
                       <div className="breakdown-item penalty">
                         <span className="breakdown-label">Penalización por redundancia</span>
                         <div className="breakdown-bar">
                           <div
                             className="bar-fill penalty-bar"
-                            style={{ width: `${Math.min(rec.candidateScore.redundancyPenalty, 30)}%` }}
+                            style={{ width: `${Math.min(rec.candidateScore.redundancyPenalty ?? 0, 30)}%` }}
                           />
                         </div>
-                        <span className="breakdown-value">-{rec.candidateScore.redundancyPenalty.toFixed(1)}</span>
+                        <span className="breakdown-value">-{(rec.candidateScore.redundancyPenalty ?? 0).toFixed(1)}</span>
                       </div>
                     )}
                   </div>

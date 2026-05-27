@@ -1,180 +1,200 @@
 .recommendation-explanation {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border-radius: 12px;
-  border: 1px solid #0f3460;
+  margin: 1rem 0;
+  padding: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+.recommendation-explanation:hover {
+  border-color: var(--border-cyan);
 }
 
 .recommendation-explanation .section-title {
-  color: #e94560;
-  font-size: 1.4rem;
+  color: var(--v-cyan);
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .recommendation-explanation .section-subtitle {
-  color: #a0a0a0;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 1.25rem;
 }
 
 .explanation-cards {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .explanation-card {
-  background: #0f0f23;
-  border-radius: 10px;
-  border: 1px solid #2a2a4a;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
 }
 
 .explanation-card:hover {
-  border-color: #e94560;
+  border-color: var(--border-cyan);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   cursor: pointer;
-  background: #1a1a3e;
-  transition: background 0.2s;
+  background: var(--bg-elevated);
+  transition: background 0.15s;
 }
 
 .card-header:hover {
-  background: #252550;
+  background: rgba(0, 212, 255, 0.05);
 }
 
 .header-main {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .card-rank {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #e94560;
-  min-width: 30px;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--v-cyan);
+  min-width: 28px;
 }
 
 .card-agent-img {
-  width: 45px;
-  height: 45px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
   object-fit: cover;
-  border: 2px solid #3a3a6a;
+  border: 1px solid var(--border-default);
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
 }
 
 .card-agent-info h3 {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
-  font-size: 1.1rem;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .card-role {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 2px 100%, 0 calc(100% - 2px));
 }
 
-.card-role.Duelista { background: #ff4757; color: #fff; }
-.card-role.Controlador { background: #2ed573; color: #000; }
-.card-role.Iniciador { background: #ffa502; color: #000; }
-.card-role.Centinela { background: #1e90ff; color: #fff; }
+.card-role.Duelista { background: rgba(255, 70, 85, 0.2); color: var(--role-duelist); }
+.card-role.Controlador { background: rgba(168, 85, 247, 0.2); color: var(--role-controller); }
+.card-role.Iniciador { background: rgba(0, 212, 255, 0.2); color: var(--role-initiator); }
+.card-role.Centinela { background: rgba(34, 197, 94, 0.2); color: var(--role-sentinel); }
 
 .header-score {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .final-score {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #ffd700;
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--v-gold);
 }
 
 .confidence-badge {
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 2px 100%, 0 calc(100% - 2px));
 }
 
 .confidence-badge.high {
-  background: #2ed573;
-  color: #000;
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--role-sentinel);
 }
 
 .confidence-badge.medium {
-  background: #ffa502;
-  color: #000;
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
 }
 
 .confidence-badge.low {
-  background: #ff4757;
-  color: #fff;
+  background: rgba(255, 70, 85, 0.2);
+  color: var(--v-red);
 }
 
 .match-type {
-  font-size: 0.7rem;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: #2a2a4a;
-  color: #a0a0a0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 2px 100%, 0 calc(100% - 2px));
 }
 
 .match-type.exact {
-  background: #2ed573;
-  color: #000;
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--role-sentinel);
 }
 
 .why-this-pick {
-  padding: 1rem;
-  background: linear-gradient(135deg, #1a3a5a 0%, #0f2840 100%);
-  border-left: 4px solid #e94560;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.06) 0%, transparent 100%);
+  border-left: 2px solid var(--v-cyan);
 }
 
 .why-this-pick h4 {
-  color: #e94560;
+  color: var(--v-cyan);
   margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .why-this-pick p {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 
 .score-breakdown {
-  padding: 1rem;
-  border-bottom: 1px solid #2a2a4a;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .score-breakdown h4 {
-  color: #a0a0a0;
-  margin: 0 0 0.75rem 0;
-  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.625rem 0;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .breakdown-bars {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .breakdown-item {
@@ -184,22 +204,22 @@
 }
 
 .breakdown-label {
-  color: #a0a0a0;
-  font-size: 0.75rem;
-  min-width: 160px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  min-width: 140px;
 }
 
 .breakdown-bar {
   flex: 1;
-  height: 8px;
-  background: #2a2a4a;
-  border-radius: 4px;
+  height: 6px;
+  background: var(--bg-elevated);
   overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 2px) 0, 100% 2px, 100% 100%, 2px 100%, 0 calc(100% - 2px));
 }
 
 .bar-fill {
   height: 100%;
-  border-radius: 4px;
   transition: width 0.5s ease;
 }
 
@@ -207,75 +227,80 @@
 .bar-fill.composition-fit { background: linear-gradient(90deg, #f093fb, #f5576c); }
 .bar-fill.role-need { background: linear-gradient(90deg, #4facfe, #00f2fe); }
 .bar-fill.map-identity { background: linear-gradient(90deg, #43e97b, #38f9d7); }
-.bar-fill.penalty-bar { background: #ff4757; }
+.bar-fill.penalty-bar { background: var(--v-red); }
 
 .breakdown-value {
-  color: #fff;
-  font-size: 0.75rem;
-  min-width: 40px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  min-width: 36px;
   text-align: right;
 }
 
 .breakdown-item.penalty .breakdown-label {
-  color: #ff4757;
+  color: var(--v-red);
 }
 
 .pros-cons {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
 }
 
 .pros, .cons {
   flex: 1;
-  padding: 0.75rem;
-  border-radius: 8px;
+  padding: 0.625rem;
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
 }
 
 .pros {
-  background: rgba(46, 213, 115, 0.1);
-  border: 1px solid rgba(46, 213, 115, 0.3);
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
 .cons {
-  background: rgba(255, 71, 87, 0.1);
-  border: 1px solid rgba(255, 71, 87, 0.3);
+  background: rgba(255, 70, 85, 0.06);
+  border: 1px solid var(--border-accent);
 }
 
 .pros h4 {
-  color: #2ed573;
+  color: var(--role-sentinel);
   margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
 }
 
 .cons h4 {
-  color: #ff4757;
+  color: var(--v-red);
   margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
 }
 
 .pros ul, .cons ul {
   margin: 0;
   padding-left: 1rem;
-  color: #a0a0a0;
-  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
 }
 
 .pros li, .cons li {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .rejected-alternatives {
-  padding: 1rem;
-  background: #0a0a1a;
-  border-top: 1px solid #2a2a4a;
+  padding: 0.875rem 1rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-default);
 }
 
 .rejected-alternatives h4 {
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin: 0 0 0.5rem 0;
-  font-size: 0.85rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .rejected-alternatives ul {
@@ -287,106 +312,107 @@
 .rejected-alternatives li {
   display: flex;
   gap: 0.5rem;
-  padding: 0.25rem 0;
-  color: #a0a0a0;
-  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
 }
 
-.alt-name {
-  color: #e94560;
-  font-weight: bold;
+.rejected-alternatives .alt-name {
+  color: var(--v-red);
+  font-weight: 600;
 }
 
-.alt-reason {
-  color: #666;
+.rejected-alternatives .alt-reason {
+  color: var(--text-muted);
 }
 
 .card-footer {
-  padding: 0.75rem 1rem;
-  background: #1a1a3e;
+  padding: 0.625rem 1rem;
+  background: var(--bg-elevated);
   text-align: center;
 }
 
 .expand-btn {
   background: transparent;
   border: none;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.85rem;
-  transition: color 0.2s;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  transition: color 0.15s;
 }
 
 .expand-btn:hover {
-  color: #e94560;
+  color: var(--v-cyan);
 }
 
 @media (max-width: 768px) {
   .recommendation-explanation {
-    margin: 1rem 0;
-    padding: 1rem;
+    margin: 0.75rem 0;
+    padding: 0.875rem;
   }
 
   .recommendation-explanation .section-title {
-    font-size: 1.1rem;
-  }
-
-  .recommendation-explanation .section-subtitle {
-    font-size: 0.8rem;
-  }
-
-  .card-header {
-    padding: 0.75rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .header-main {
-    gap: 0.5rem;
-  }
-
-  .card-rank {
-    font-size: 1rem;
-    min-width: 25px;
-  }
-
-  .card-agent-img {
-    width: 35px;
-    height: 35px;
-  }
-
-  .card-agent-info h3 {
     font-size: 0.95rem;
   }
 
+  .recommendation-explanation .section-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .card-header {
+    padding: 0.625rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .header-main {
+    gap: 0.4rem;
+  }
+
+  .card-rank {
+    font-size: 0.9rem;
+    min-width: 22px;
+  }
+
+  .card-agent-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .card-agent-info h3 {
+    font-size: 0.9rem;
+  }
+
   .header-score {
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .final-score {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .why-this-pick {
-    padding: 0.75rem;
+    padding: 0.625rem;
   }
 
   .why-this-pick p {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .score-breakdown {
-    padding: 0.75rem;
+    padding: 0.625rem;
   }
 
   .breakdown-label {
-    min-width: 100px;
-    font-size: 0.65rem;
+    min-width: 90px;
+    font-size: 0.6rem;
   }
 
   .pros-cons {
     flex-direction: column;
-    padding: 0.75rem;
-    gap: 0.75rem;
+    padding: 0.625rem;
+    gap: 0.625rem;
   }
 
   .pros, .cons {
@@ -394,52 +420,52 @@
   }
 
   .pros h4, .cons h4 {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .pros ul, .cons ul {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
   .recommendation-explanation .section-title {
-    font-size: 1rem;
+    font-size: 0.85rem;
     flex-wrap: wrap;
   }
 
   .card-agent-info h3 {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .card-role {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   .final-score {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .confidence-badge, .match-type {
-    font-size: 0.6rem;
-    padding: 2px 6px;
+    font-size: 0.55rem;
+    padding: 0.1rem 0.3rem;
   }
 
   .why-this-pick h4 {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .why-this-pick p {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .breakdown-label {
-    min-width: 80px;
-    font-size: 0.6rem;
+    min-width: 70px;
+    font-size: 0.55rem;
   }
 
   .breakdown-value {
-    font-size: 0.65rem;
-    min-width: 30px;
+    font-size: 0.6rem;
+    min-width: 28px;
   }
 }

@@ -15,15 +15,15 @@ export const CompositionPreview = ({
   const emptySlots = 5 - selectedAgents.length;
 
   return (
-    <div className="composition-preview">
+    <div className="composition-preview notched">
       <div className="preview-header">
         <h2 className="section-title">
-          <span className="title-icon">⬡</span>
+          <span className="title-icon">&#9733;</span>
           Your Composition
         </h2>
         {selectedAgents.length > 0 && (
           <button className="clear-btn" onClick={onClearAll}>
-            Clear All
+            CLEAR ALL
           </button>
         )}
       </div>
@@ -35,7 +35,7 @@ export const CompositionPreview = ({
               onClick={() => onRemoveAgent(agent)}
               aria-label={`Remove ${agent.title}`}
             >
-              ×
+              &times;
             </button>
             <img src={agent.thumbnailUrl} alt={agent.title} className="slot-agent-image" />
             <span className="slot-agent-name">{agent.title}</span>
@@ -46,7 +46,7 @@ export const CompositionPreview = ({
             <div className="empty-placeholder">
               <span className="plus-icon">+</span>
             </div>
-            <span className="slot-label">Empty</span>
+            <span className="slot-label">EMPTY</span>
           </div>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import type { Agent } from '../types';
-import { getAgentProfile, isCompatibleControllerPair, type TacticalSubrole } from './agentProfiles';
+import { getAgentProfile, getControllerSubrole, type TacticalSubrole } from './agentProfiles';
 
 export interface RoleCounts {
   Duelista: number;
@@ -9,39 +9,29 @@ export interface RoleCounts {
 }
 
 export interface SubroleCounts {
-  'primary-smokes': number;
-  'execute-smokes': number;
-  'secondary-controller': number;
-  'flex-controller': number;
-  'wall-controller': number;
-  anchor: number;
-  'site-anchor': number;
-  lurker: number;
-  entry: number;
-  'space-creator': number;
-  'mobility-duelist': number;
-  'fast-execute': number;
-  'clear-space': number;
-  recon: number;
+  'smoke-block': number;
+  'area-denial-smoke': number;
+  'wall-place': number;
+  'sustained-control': number;
   'flash-initiator': number;
-  'blind-support': number;
-  'damage-utility': number;
+  'recon-initiator': number;
+  'damage-initiator': number;
+  'anchor-sentinel': number;
   'trap-sentinel': number;
-  'flank-watch': number;
+  'support-sentinel': number;
+  'entry-duelist': number;
+  'mobility-duelist': number;
+  'lurk-duelist': number;
   postplant: number;
-  'map-control': number;
-  'execute-support': number;
   healing: number;
-  support: number;
-  'retake-support': number;
-  stall: number;
-  'crowd-control': number;
+  retake: number;
   'area-denial': number;
-  'anti-push': number;
+  'crowd-control': number;
 }
 
 export interface TacticalNeeds {
-  hasPrimarySmokes: boolean;
+  hasSmokeBlock: boolean;
+  hasWallPlace: boolean;
   hasEntry: boolean;
   hasInitiatorUtility: boolean;
   hasSentinelAnchor: boolean;
@@ -51,13 +41,13 @@ export interface TacticalNeeds {
   hasRecon: boolean;
   hasFlash: boolean;
   hasLurker: boolean;
-  hasWallController: boolean;
   roleCounts: RoleCounts;
   subroleCounts: SubroleCounts;
   missingRoles: (keyof RoleCounts)[];
   duplicatedRoles: (keyof RoleCounts)[];
   missingTacticalFunctions: TacticalSubrole[];
   duplicatedSubroles: TacticalSubrole[];
+  controllerSubroleTypes: ('smokeBlock' | 'wallPlace')[];
 }
 
 export interface CompositionAnalysis {
@@ -76,35 +66,24 @@ const createEmptyRoleCounts = (): RoleCounts => ({
 });
 
 const createEmptySubroleCounts = (): SubroleCounts => ({
-  'primary-smokes': 0,
-  'execute-smokes': 0,
-  'secondary-controller': 0,
-  'flex-controller': 0,
-  'wall-controller': 0,
-  anchor: 0,
-  'site-anchor': 0,
-  lurker: 0,
-  entry: 0,
-  'space-creator': 0,
-  'mobility-duelist': 0,
-  'fast-execute': 0,
-  'clear-space': 0,
-  recon: 0,
+  'smoke-block': 0,
+  'area-denial-smoke': 0,
+  'wall-place': 0,
+  'sustained-control': 0,
   'flash-initiator': 0,
-  'blind-support': 0,
-  'damage-utility': 0,
+  'recon-initiator': 0,
+  'damage-initiator': 0,
+  'anchor-sentinel': 0,
   'trap-sentinel': 0,
-  'flank-watch': 0,
+  'support-sentinel': 0,
+  'entry-duelist': 0,
+  'mobility-duelist': 0,
+  'lurk-duelist': 0,
   postplant: 0,
-  'map-control': 0,
-  'execute-support': 0,
   healing: 0,
-  support: 0,
-  'retake-support': 0,
-  stall: 0,
-  'crowd-control': 0,
+  retake: 0,
   'area-denial': 0,
-  'anti-push': 0,
+  'crowd-control': 0,
 });
 
 export const analyzeComposition = (
@@ -115,35 +94,46 @@ export const analyzeComposition = (
   const subroleCounts = createEmptySubroleCounts();
   const redundantPairs: string[] = [];
   const missingPairs: string[] = [];
+  const controllerSubroleTypes: ('smokeBlock' | 'wallPlace')[] = [];
 
   selectedAgents.forEach(agent => {
     const profile = getAgentProfile(agent.title);
     if (profile) {
       roleCounts[profile.role]++;
       profile.subroles.forEach(subrole => {
-        subroleCounts[subrole]++;
+        if (subrole in subroleCounts) {
+          subroleCounts[subrole as keyof SubroleCounts]++;
+        }
       });
+
+      if (profile.role === 'Controlador') {
+        const subrole = getControllerSubrole(agent.title);
+        if (subrole && !controllerSubroleTypes.includes(subrole)) {
+          controllerSubroleTypes.push(subrole);
+        }
+      }
     }
   });
 
   const needs: TacticalNeeds = {
-    hasPrimarySmokes: subroleCounts['primary-smokes'] > 0,
-    hasEntry: subroleCounts.entry > 0,
-    hasInitiatorUtility: subroleCounts.recon > 0 || subroleCounts['flash-initiator'] > 0,
-    hasSentinelAnchor: subroleCounts.anchor > 0 || subroleCounts['trap-sentinel'] > 0,
-    hasMapControl: subroleCounts['map-control'] > 0 || subroleCounts['wall-controller'] > 0,
+    hasSmokeBlock: subroleCounts['smoke-block'] > 0,
+    hasWallPlace: subroleCounts['wall-place'] > 0,
+    hasEntry: subroleCounts['entry-duelist'] > 0,
+    hasInitiatorUtility: subroleCounts['recon-initiator'] > 0 || subroleCounts['flash-initiator'] > 0,
+    hasSentinelAnchor: subroleCounts['anchor-sentinel'] > 0 || subroleCounts['trap-sentinel'] > 0,
+    hasMapControl: subroleCounts['wall-place'] > 0 || subroleCounts['sustained-control'] > 0,
     hasPostplant: subroleCounts.postplant > 0,
     hasHealing: subroleCounts.healing > 0,
-    hasRecon: subroleCounts.recon > 0,
+    hasRecon: subroleCounts['recon-initiator'] > 0,
     hasFlash: subroleCounts['flash-initiator'] > 0,
-    hasLurker: subroleCounts.lurker > 0,
-    hasWallController: subroleCounts['wall-controller'] > 0,
+    hasLurker: subroleCounts['lurk-duelist'] > 0,
     roleCounts,
     subroleCounts,
     missingRoles: [],
     duplicatedRoles: [],
     missingTacticalFunctions: [],
     duplicatedSubroles: [],
+    controllerSubroleTypes,
   };
 
   if (roleCounts.Duelista === 0) needs.missingRoles.push('Duelista');
@@ -157,52 +147,61 @@ export const analyzeComposition = (
   if (roleCounts.Centinela > 1) needs.duplicatedRoles.push('Centinela');
 
   const missingFunctions: TacticalSubrole[] = [];
-  if (!needs.hasPrimarySmokes) missingFunctions.push('primary-smokes');
-  if (!needs.hasEntry) missingFunctions.push('entry');
+  if (!needs.hasSmokeBlock && !needs.hasEntry) missingFunctions.push('smoke-block');
+  if (!needs.hasWallPlace && roleCounts.Controlador >= 2) missingFunctions.push('wall-place');
+  if (!needs.hasEntry) missingFunctions.push('entry-duelist');
   if (!needs.hasInitiatorUtility) {
-    missingFunctions.push('recon');
+    missingFunctions.push('recon-initiator');
     missingFunctions.push('flash-initiator');
   }
   if (!needs.hasFlash) missingFunctions.push('flash-initiator');
-  if (!needs.hasSentinelAnchor) missingFunctions.push('anchor');
+  if (!needs.hasSentinelAnchor) missingFunctions.push('anchor-sentinel');
   if (!needs.hasPostplant) missingFunctions.push('postplant');
-  if (!needs.hasMapControl) {
-    missingFunctions.push('map-control');
-    if (!needs.hasWallController) {
-      missingFunctions.push('wall-controller');
-    }
-  }
-  if (!needs.hasLurker) missingFunctions.push('lurker');
+  if (!needs.hasLurker && roleCounts.Controlador >= 1) missingFunctions.push('lurk-duelist');
 
   needs.missingTacticalFunctions = [...new Set(missingFunctions)];
 
   const duplicatedSubs: TacticalSubrole[] = [];
   Object.entries(subroleCounts).forEach(([subrole, count]) => {
-    if (count > 1 && subrole !== 'space-creator' && subrole !== 'damage-utility') {
+    if (count > 1 && subrole !== 'lurk-duelist' && subrole !== 'mobility-duelist' && subrole !== 'crowd-control') {
       duplicatedSubs.push(subrole as TacticalSubrole);
     }
   });
   needs.duplicatedSubroles = [...new Set(duplicatedSubs)];
 
+  if (controllerSubroleTypes.length >= 2) {
+    const hasSmokeBlock = controllerSubroleTypes.includes('smokeBlock');
+    const hasWallPlace = controllerSubroleTypes.includes('wallPlace');
+
+    if (hasSmokeBlock && !hasWallPlace) {
+      redundantPairs.push('Dos controladores de humo - falta wall-control');
+    }
+  }
+
   const controllerAgents = selectedAgents.filter(
     a => getAgentProfile(a.title)?.role === 'Controlador'
   );
   if (controllerAgents.length >= 2) {
-    const controllerNames = controllerAgents.map(a => a.title);
-    for (let i = 0; i < controllerNames.length; i++) {
-      for (let j = i + 1; j < controllerNames.length; j++) {
-        if (!isCompatibleControllerPair(controllerNames[i], controllerNames[j])) {
-          redundantPairs.push(`${controllerNames[i]} + ${controllerNames[j]}`);
-        }
-      }
+    const controllerSubroles = controllerAgents
+      .map(a => getControllerSubrole(a.title))
+      .filter(Boolean) as ('smokeBlock' | 'wallPlace')[];
+
+    const smokeBlockCount = controllerSubroles.filter(s => s === 'smokeBlock').length;
+    const wallPlaceCount = controllerSubroles.filter(s => s === 'wallPlace').length;
+
+    if (smokeBlockCount >= 2) {
+      redundantPairs.push('Dos controladores de humo (smoke-block) - deberían互补arse con wall-place');
+    }
+    if (wallPlaceCount >= 2) {
+      redundantPairs.push('Dos controladores de pared (wall-place) - deberían complementarse con smoke-block');
     }
   }
 
   const initiatorAgents = selectedAgents.filter(
     a => getAgentProfile(a.title)?.role === 'Iniciador'
   );
-  if (initiatorAgents.length >= 1) {
-    redundantPairs.push(`Ya hay ${initiatorAgents.length} iniciador(es) en el equipo`);
+  if (initiatorAgents.length >= 2) {
+    redundantPairs.push(`Ya hay ${initiatorAgents.length} iniciadores en el equipo`);
   }
 
   const duelistAgents = selectedAgents.filter(
@@ -212,46 +211,47 @@ export const analyzeComposition = (
     redundantPairs.push(`Ya hay ${duelistAgents.length} duelistas en el equipo`);
   }
 
-  if (!needs.hasPrimarySmokes && !needs.hasEntry) {
-    missingPairs.push('primary-smokes OR entry');
+  if (!needs.hasSmokeBlock && !needs.hasEntry) {
+    missingPairs.push('smoke-block o entry');
+  }
+  if (!needs.hasWallPlace && controllerSubroleTypes.length >= 1 && controllerSubroleTypes.every(s => s === 'smokeBlock')) {
+    missingPairs.push('wall-place (complemento para smokes)');
   }
   if (!needs.hasSentinelAnchor && selectedAgents.length >= 3) {
-    missingPairs.push('sentinel anchor');
+    missingPairs.push('anchor o trap sentinel');
   }
   if (!needs.hasInitiatorUtility && selectedAgents.length >= 2) {
-    missingPairs.push('initiator utility');
+    missingPairs.push('utilidad de iniciador (flash o recon)');
   }
 
   const teamStrengths: string[] = [];
-  if (needs.hasPrimarySmokes) teamStrengths.push('Primary smokes');
+  if (needs.hasSmokeBlock) teamStrengths.push('Smoke-block para bloquear lineas');
+  if (needs.hasWallPlace) teamStrengths.push('Wall-place para control persistente');
   if (needs.hasEntry) teamStrengths.push('Entry fragger');
-  if (needs.hasInitiatorUtility) teamStrengths.push('Initiator utility');
+  if (needs.hasInitiatorUtility) teamStrengths.push('Utilidad de iniciador');
   if (needs.hasSentinelAnchor) teamStrengths.push('Sentinel anchor');
-  if (needs.hasMapControl) teamStrengths.push('Map control');
+  if (needs.hasMapControl) teamStrengths.push('Control de mapa');
   if (needs.hasPostplant) teamStrengths.push('Post-plant capability');
   if (needs.hasHealing) teamStrengths.push('Healing');
   if (roleCounts.Duelista >= 2) teamStrengths.push('Multi-entry potential');
-  if (roleCounts.Iniciador >= 1 && roleCounts.Controlador >= 1) {
-    teamStrengths.push('Controller + Initiator combo');
+  if (controllerSubroleTypes.includes('smokeBlock') && controllerSubroleTypes.includes('wallPlace')) {
+    teamStrengths.push('Composicion de controladores balanceada');
   }
 
   const teamWeaknesses: string[] = [];
   if (needs.missingRoles.length > 0) {
     needs.missingRoles.forEach(role => {
-      teamWeaknesses.push(`Missing ${role}`);
+      teamWeaknesses.push(`Falta ${role}`);
     });
   }
   if (needs.duplicatedRoles.length > 0) {
     needs.duplicatedRoles.forEach(role => {
-      teamWeaknesses.push(`Multiple ${role}s may cause redundancy`);
+      teamWeaknesses.push(`Demasiados ${role}s`);
     });
-  }
-  if (needs.missingTacticalFunctions.length > 0) {
-    teamWeaknesses.push('Missing tactical functions');
   }
   if (redundantPairs.length > 0) {
     redundantPairs.forEach(pair => {
-      teamWeaknesses.push(`Potential redundancy: ${pair}`);
+      teamWeaknesses.push(`Redundancia: ${pair}`);
     });
   }
 
@@ -276,7 +276,27 @@ export const getTacticalSuggestion = (
 
   const fillsMissingRole = needs.missingRoles.includes(profile.role);
   if (fillsMissingRole) {
-    suggestions.push(`Fills missing ${profile.role} role`);
+    suggestions.push(`Llena el rol de ${profile.role} que falta`);
+  }
+
+  if (profile.role === 'Controlador') {
+    const candidateSubrole = getControllerSubrole(candidateAgent.title);
+
+    if (candidateSubrole === 'wallPlace' && needs.hasSmokeBlock && !needs.hasWallPlace) {
+      suggestions.push('Añade wall-control para complementar los smokes existentes');
+    }
+
+    if (candidateSubrole === 'smokeBlock' && needs.hasWallPlace && !needs.hasSmokeBlock) {
+      suggestions.push('Añade smoke-block para complementar el wall-control existente');
+    }
+
+    if (candidateSubrole === 'smokeBlock' && needs.hasSmokeBlock && !needs.hasWallPlace) {
+      suggestions.push('REDSMOKE: Ya tienes smoke-block, necesitas wall-place, no otro smoke-block');
+    }
+
+    if (candidateSubrole === 'wallPlace' && needs.hasWallPlace && !needs.hasSmokeBlock) {
+      suggestions.push('REDSMOKE: Ya tienes wall-place, necesitas smoke-block, no otro wall-place');
+    }
   }
 
   const fillsMissingSubrole = profile.subroles.some(
@@ -286,15 +306,11 @@ export const getTacticalSuggestion = (
     const filledFunctions = profile.subroles.filter(
       sub => needs.missingTacticalFunctions.includes(sub)
     );
-    suggestions.push(`Adds: ${filledFunctions.join(', ')}`);
+    suggestions.push(`Añade: ${filledFunctions.join(', ')}`);
   }
 
   if (needs.duplicatedRoles.includes(profile.role)) {
-    suggestions.push(`WARNING: Duplicates ${profile.role} role`);
-  }
-
-  if (profile.subroles.includes('wall-controller') && needs.hasPrimarySmokes) {
-    suggestions.push('Wall controller adds map control without duplicating primary smokes');
+    suggestions.push(`WARNING: Duplica el rol de ${profile.role}`);
   }
 
   return suggestions.join('. ');

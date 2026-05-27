@@ -11,6 +11,13 @@ interface AgentSelectorProps {
 
 const ROLES: AgentRole[] = ['Duelista', 'Controlador', 'Iniciador', 'Centinela'];
 
+const ROLE_COLORS: Record<AgentRole, string> = {
+  'Duelista': 'role-duelist',
+  'Controlador': 'role-controller',
+  'Iniciador': 'role-initiator',
+  'Centinela': 'role-sentinel',
+};
+
 export const AgentSelector = ({
   selectedAgents,
   onSelectAgent,
@@ -25,9 +32,9 @@ export const AgentSelector = ({
     : agents;
 
   return (
-    <div className="agent-selector">
+    <div className="agent-selector notched">
       <h2 className="section-title">
-        <span className="title-icon">◎</span>
+        <span className="title-icon">&#9670;</span>
         Teammate Agents
         <span className="agent-count">{selectedAgents.length}/5</span>
       </h2>
@@ -36,15 +43,15 @@ export const AgentSelector = ({
           className={`role-filter-btn ${selectedRole === null ? 'active' : ''}`}
           onClick={() => setSelectedRole(null)}
         >
-          Todos
+          TODOS
         </button>
         {ROLES.map(role => (
           <button
             key={role}
-            className={`role-filter-btn ${selectedRole === role ? 'active' : ''}`}
+            className={`role-filter-btn ${selectedRole === role ? 'active' : ''} ${ROLE_COLORS[role]}`}
             onClick={() => setSelectedRole(role)}
           >
-            {role}
+            {role.toUpperCase()}
           </button>
         ))}
       </div>
@@ -66,7 +73,7 @@ export const AgentSelector = ({
               <span className="agent-name">{agent.title}</span>
               {isSelected && (
                 <div className="selected-overlay">
-                  <span className="check-icon">✓</span>
+                  <span className="check-icon">&#10003;</span>
                 </div>
               )}
             </button>

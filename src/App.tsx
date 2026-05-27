@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import type { Agent } from './types';
 import { Header } from './components/Header';
 import { MapSelector } from './components/MapSelector';
@@ -12,25 +12,13 @@ import { useCompositions } from './hooks/useCompositions';
 import { scoreCompositions, getTopCompositions, getSynergyRecommendations } from './utils/recommendationEngine';
 import { RecommendationExplanation } from './components/RecommendationExplanation';
 import { getMapName } from './data/maps';
-import { TacticalGuide } from './components/TacticalGuide';
 import './App.css';
 
+const TacticalGuide = lazy(() => import('./components/TacticalGuide').then(m => ({ default: m.TacticalGuide })));
+
 function App() {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem('valoprocomp-theme');
-    return (saved as 'dark' | 'light') || 'dark';
-  });
   const [selectedMap, setSelectedMap] = useState<number | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('valoprocomp-theme', theme);
-  }, [theme]);
-
-  const handleThemeToggle = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
 
   const { compositions, loading, error, refetch } = useCompositions(selectedMap);
 
@@ -44,7 +32,7 @@ function App() {
 
   const synergyRecommendations = useMemo(() => {
     if (selectedAgents.length === 0 || selectedAgents.length >= 5) return [];
-    return getSynergyRecommendations(compositions, selectedAgents, 5, selectedMap?.toString());
+    return getSynergyRecommendations(compositions, selectedAgents, 5, selectedMap ? getMapName(selectedMap) : undefined);
   }, [compositions, selectedAgents, selectedMap]);
 
   const handleSelectMap = (mapId: number) => {
@@ -75,9 +63,10 @@ function App() {
       <div className="app-bg">
         <div className="bg-gradient" />
         <div className="bg-grid" />
+        <div className="bg-vignette" />
       </div>
 
-      <Header theme={theme} onThemeToggle={handleThemeToggle} />
+      <Header />
 
       <main className="main-content">
         <div className="dashboard-layout">
@@ -100,8 +89,6 @@ function App() {
                   onSelectAgent={handleSelectAgent}
                   onRemoveAgent={handleRemoveAgent}
                 />
-
-                
               </>
             )}
           </aside>
@@ -131,17 +118,19 @@ function App() {
                 />
 
                 {selectedAgents.length > 0 && (
-                  <TacticalGuide
-                    selectedMap={selectedMap}
-                    selectedAgents={selectedAgents}
-                  />
+                  <Suspense fallback={<LoadingState message="Cargando guía táctica..." />}>
+                    <TacticalGuide
+                      selectedMap={selectedMap}
+                      selectedAgents={selectedAgents}
+                    />
+                  </Suspense>
                 )}
               </>
             )}
 
             {!selectedMap && (
               <div className="welcome-message">
-                <div className="welcome-icon">🎮</div>
+                <div className="welcome-icon">&#9883;</div>
                 <h2>Seleccioná un Mapa</h2>
                 <p>Elegí el mapa y los agentes de tu equipo para encontrar los mejores picks.</p>
               </div>

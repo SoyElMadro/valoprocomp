@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Composition, Agent, AgentRole } from '../types';
 
-const API_BASE_URL = 'https://api.thespike.gg/stats/compositions';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/stats/compositions';
 
 const AGENT_ROLES: Record<string, AgentRole> = {
   Astra: 'Controlador',

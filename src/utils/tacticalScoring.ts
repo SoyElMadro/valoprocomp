@@ -1,41 +1,33 @@
 import type { Agent, Composition } from '../types';
-import { getAgentProfile, isCompatibleControllerPair } from './agentProfiles';
+import { getAgentProfile, isComplementaryControllerPair, isRedundantControllerPair, getControllerSubrole } from './agentProfiles';
 import { analyzeComposition, type CompositionAnalysis } from './compositionAnalyzer';
-import { type RolePatternAnalysis, getRoleBoost, getRolePenalty, getRoleFromAgent } from './rolePatternAnalyzer';
-
-export interface ScoredComposition {
-  composition: Composition;
-  matchPercentage: number;
-  matchingAgents: Agent[];
-  missingAgents: Agent[];
-  exactMatch: boolean;
-  score: number;
-  proDataScore: number;
-  compositionFitScore: number;
-  roleNeedScore: number;
-  mapIdentityScore: number;
-  redundancyPenalty: number;
-}
+import type { RolePatternAnalysis } from './rolePatternAnalyzer';
+import {
+  calculateMapFitScore,
+  getCompositionContextScore,
+  getFullAgentProfile,
+  isDirectReplacement,
+  type ActiveMapName,
+} from './mapAgentIntelligence';
 
 export interface CandidateScore {
   agent: Agent;
   proDataScore: number;
   compositionFitScore: number;
   roleNeedScore: number;
-  mapIdentityScore: number;
   redundancyPenalty: number;
   finalScore: number;
   reasons: string[];
   pros: string[];
   cons: string[];
-  rejectedAlternatives: RejectedAlternative[];
   confidence: 'high' | 'medium' | 'low';
   matchType: 'exact' | 'partial';
-}
-
-export interface RejectedAlternative {
-  agentName: string;
-  reason: string;
+  functionalDiversity: number;
+  mapFitScore: number;
+  compositionContextScore: number;
+  mapBoost: number;
+  proMetaScore: number;
+  recommendationStrength: 'must-pick' | 'highly-recommended' | 'recommended' | 'situational' | 'risky';
 }
 
 export const calculateProDataScore = (
@@ -58,9 +50,9 @@ export const calculateProDataScore = (
   const confidence = Math.min(Math.log10(totalUses + 1) / Math.log10(101), 1);
   const adjustedWinRate = 50 + (weightedWinrate - 50) * confidence;
 
-  const normalizedWinrate = Math.min(adjustedWinRate / 100, 1) * 50;
+  const normalizedWinrate = Math.min(adjustedWinRate / 100, 1) * 40;
   const normalizedPickRate = Math.min(avgPickRate / 10, 1) * 30;
-  const confidenceScore = confidence * 20;
+  const confidenceScore = confidence * 30;
 
   return normalizedWinrate + normalizedPickRate + confidenceScore;
 };
@@ -71,7 +63,8 @@ export const calculateCompositionFitScore = (
   _matchingComps?: Composition[]
 ): number => {
   const candidateProfile = getAgentProfile(candidate.title);
-  if (!candidateProfile) return 0;
+  const candidateFullProfile = getFullAgentProfile(candidate.title);
+  if (!candidateProfile || !candidateFullProfile) return 0;
 
   const selectedProfiles = selectedAgents
     .map(a => getAgentProfile(a.title))
@@ -90,6 +83,14 @@ export const calculateCompositionFitScore = (
       synergyPoints += 8;
     }
 
+    const selectedNameLower = profile.agentName.toLowerCase();
+    const isSynergistByFullData = candidateFullProfile.bestWith.some(
+      n => n.toLowerCase() === selectedNameLower
+    );
+    if (isSynergistByFullData) {
+      synergyPoints += 8;
+    }
+
     const subroleOverlap = candidateProfile.subroles.filter(
       sub => profile.subroles.includes(sub)
     ).length;
@@ -97,11 +98,16 @@ export const calculateCompositionFitScore = (
       synergyPoints += 2;
     }
 
+    const isReplacement = isDirectReplacement(profile.agentName, candidate.title);
+    if (isReplacement) {
+      synergyPoints -= 10;
+    }
+
     if (candidateProfile.role === 'Controlador' && profile.role === 'Controlador') {
-      if (isCompatibleControllerPair(candidate.title, profile.agentName)) {
-        synergyPoints += 5;
-      } else {
-        synergyPoints -= 5;
+      if (isComplementaryControllerPair(candidate.title, profile.agentName)) {
+        synergyPoints += 10;
+      } else if (isRedundantControllerPair(candidate.title, profile.agentName)) {
+        synergyPoints -= 20;
       }
     }
   });
@@ -121,76 +127,53 @@ export const calculateRoleNeedScore = (
   let score = 50;
 
   if (needs.missingRoles.includes(profile.role)) {
-    score += 25;
+    score += 30;
+  }
+
+  if (profile.role === 'Controlador') {
+    const candidateSubrole = getControllerSubrole(candidate.title);
+
+    if (candidateSubrole === 'wallPlace' && needs.hasSmokeBlock && !needs.hasWallPlace) {
+      score += 40;
+    }
+
+    if (candidateSubrole === 'smokeBlock' && needs.hasWallPlace && !needs.hasSmokeBlock) {
+      score += 40;
+    }
+
+    if (candidateSubrole === 'smokeBlock' && needs.hasSmokeBlock && !needs.hasWallPlace) {
+      score -= 35;
+    }
+
+    if (candidateSubrole === 'wallPlace' && needs.hasWallPlace && !needs.hasSmokeBlock) {
+      score -= 35;
+    }
   }
 
   const duplicatedRole = needs.duplicatedRoles.includes(profile.role);
   if (duplicatedRole) {
-    score -= 15;
+    score -= 20;
   }
 
   const fillsMissingSubrole = profile.subroles.some(
     sub => needs.missingTacticalFunctions.includes(sub)
   );
   if (fillsMissingSubrole) {
-    score += 20;
-
-    const filledFunctions = profile.subroles.filter(
-      sub => needs.missingTacticalFunctions.includes(sub)
-    );
-    if (filledFunctions.includes('anchor') || filledFunctions.includes('wall-controller')) {
-      score += 15;
+    score += 15;
+    if (profile.subroles.includes('anchor-sentinel')) {
+      score += 10;
     }
-  }
-
-  const duplicatedSubrole = profile.subroles.some(
-    sub => needs.duplicatedSubroles.includes(sub)
-  );
-  if (duplicatedSubrole && !profile.subroles.includes('wall-controller')) {
-    score -= 10;
-  }
-
-  if (profile.subroles.includes('wall-controller') && needs.hasPrimarySmokes) {
-    score += 15;
-  }
-
-  if (profile.subroles.includes('anchor') && !needs.hasSentinelAnchor) {
-    score += 15;
-  }
-
-  if (profile.subroles.includes('postplant') && !needs.hasPostplant) {
-    score += 10;
-  }
-
-  if (profile.subroles.includes('map-control') && !needs.hasMapControl) {
-    score += 10;
   }
 
   if (profile.subroles.includes('flash-initiator') && !needs.hasFlash) {
     score += 15;
   }
 
+  if (profile.subroles.includes('entry-duelist') && !needs.hasEntry) {
+    score += 15;
+  }
+
   return Math.max(0, Math.min(100, score));
-};
-
-export const calculateMapIdentityScore = (
-  candidate: Agent,
-  mapId?: string,
-  matchingComps?: Composition[]
-): number => {
-  if (!mapId || !matchingComps || matchingComps.length === 0) {
-    return 50;
-  }
-
-  const profile = getAgentProfile(candidate.title);
-  if (!profile?.mapStrengths) return 50;
-
-  const mapStrength = profile.mapStrengths.find(m => m.mapId === mapId);
-  if (mapStrength) {
-    return 50 + mapStrength.strength * 0.5;
-  }
-
-  return 50;
 };
 
 export const calculateRedundancyPenalty = (
@@ -199,70 +182,126 @@ export const calculateRedundancyPenalty = (
   analysis: CompositionAnalysis
 ): number => {
   const profile = getAgentProfile(candidate.title);
+  const fullProfile = getFullAgentProfile(candidate.title);
   if (!profile) return 0;
 
   let penalty = 0;
-
   const { needs } = analysis;
 
-  if (profile.role === 'Iniciador' && (needs.roleCounts.Iniciador >= 1 || needs.subroleCounts.recon >= 1 || needs.subroleCounts['flash-initiator'] >= 1)) {
-    penalty += 25;
+  if (profile.role === 'Controlador') {
+    const candidateSubrole = getControllerSubrole(candidate.title);
+    const { controllerSubroleTypes } = needs;
+
+    if (candidateSubrole === 'smokeBlock' && controllerSubroleTypes.includes('smokeBlock')) {
+      if (!controllerSubroleTypes.includes('wallPlace')) {
+        penalty += 45;
+      }
+    }
+
+    if (candidateSubrole === 'wallPlace' && controllerSubroleTypes.includes('wallPlace')) {
+      if (!controllerSubroleTypes.includes('smokeBlock')) {
+        penalty += 45;
+      }
+    }
+
+    if (candidateSubrole === 'smokeBlock' && controllerSubroleTypes.includes('wallPlace')) {
+      penalty -= 20;
+    }
+
+    if (candidateSubrole === 'wallPlace' && controllerSubroleTypes.includes('smokeBlock')) {
+      penalty -= 20;
+    }
+  }
+
+  if (fullProfile) {
+    const selectedNames = selectedAgents.map(a => a.title);
+    const directReplacementUsed = selectedNames.some(name =>
+      isDirectReplacement(candidate.title, name)
+    );
+    if (directReplacementUsed) {
+      penalty += 35;
+    }
+  }
+
+  if (profile.role === 'Iniciador' && needs.subroleCounts['recon-initiator'] >= 1 && needs.subroleCounts['flash-initiator'] >= 1) {
+    penalty += 30;
   }
 
   if (profile.role === 'Duelista' && needs.roleCounts.Duelista >= 2) {
-    penalty += 20;
+    penalty += 25;
   }
 
-  if (profile.role === 'Controlador') {
-    if (needs.subroleCounts['primary-smokes'] >= 1 && !profile.subroles.includes('wall-controller')) {
-      penalty += 20;
-    }
-
-    if (profile.subroles.includes('wall-controller') && needs.hasPrimarySmokes) {
-      penalty -= 10;
-    }
-  }
-
-  if (needs.duplicatedRoles.includes(profile.role)) {
-    if (profile.role === 'Iniciador' && needs.subroleCounts['flash-initiator'] >= 1 && needs.subroleCounts.recon >= 1) {
-      penalty += 20;
-    }
-
-    if (profile.role === 'Controlador') {
-      if (needs.subroleCounts['primary-smokes'] >= 1 && !profile.subroles.includes('wall-controller')) {
-        penalty += 15;
-      }
-
-      if (profile.subroles.includes('wall-controller') && needs.hasPrimarySmokes) {
-        penalty -= 10;
-      }
-    }
-
-    if (profile.subroles.includes('flash-initiator') && needs.subroleCounts['flash-initiator'] >= 1) {
-      penalty += 15;
-    }
-  }
-
-  const selectedNames = selectedAgents.map(a => a.title);
-  const selectedProfiles = selectedNames
-    .map(name => getAgentProfile(name))
+  const selectedProfiles = selectedAgents
+    .map(a => getAgentProfile(a.title))
     .filter(Boolean);
 
   selectedProfiles.forEach(selectedProfile => {
     if (!selectedProfile) return;
 
+    if (profile.role === 'Controlador' && selectedProfile.role === 'Controlador') {
+      if (isRedundantControllerPair(candidate.title, selectedProfile.agentName)) {
+        penalty += 35;
+      }
+    }
+
     const overlappingSubroles = profile.subroles.filter(
       sub => selectedProfile.subroles.includes(sub) &&
-             sub !== 'space-creator' &&
-             sub !== 'damage-utility'
+             sub !== 'lurk-duelist' &&
+             sub !== 'mobility-duelist' &&
+             sub !== 'crowd-control'
     );
 
     if (overlappingSubroles.length >= 2) {
-      penalty += overlappingSubroles.length * 5;
+      penalty += overlappingSubroles.length * 10;
     }
   });
 
   return penalty;
+};
+
+export const calculateFunctionalDiversity = (
+  candidate: Agent,
+  selectedAgents: Agent[]
+): number => {
+  const profile = getAgentProfile(candidate.title);
+  const fullProfile = getFullAgentProfile(candidate.title);
+  if (!profile || !fullProfile) return 0;
+
+  const selectedFullProfiles = selectedAgents
+    .map(a => getFullAgentProfile(a.title))
+    .filter(Boolean);
+
+  const selectedProfiles = selectedAgents
+    .map(a => getAgentProfile(a.title))
+    .filter(Boolean);
+
+  const uniqueSubroles = profile.subroles.filter(
+    sub => !selectedProfiles.some(p => p?.subroles.includes(sub))
+  );
+
+  const uniqueUtility = fullProfile.utility.filter(
+    u => !selectedFullProfiles.some(p => p?.utility.includes(u))
+  );
+
+  const subroleScore = profile.subroles.length > 0
+    ? (uniqueSubroles.length / profile.subroles.length) * 100
+    : 50;
+
+  const utilityScore = fullProfile.utility.length > 0
+    ? (uniqueUtility.length / fullProfile.utility.length) * 100
+    : 50;
+
+  return subroleScore * 0.4 + utilityScore * 0.6;
+};
+
+export const calculateProMetaScore = (candidate: Agent): number => {
+  const fullProfile = getFullAgentProfile(candidate.title);
+  if (!fullProfile) return 50;
+
+  const pickRateScore = Math.min(fullProfile.proPickRate / 20, 1) * 50;
+  const winRateScore = Math.min(Math.max(fullProfile.proWinRate - 45, 0) / 10, 1) * 50;
+
+  return pickRateScore + winRateScore;
 };
 
 export const calculateCandidateScore = (
@@ -272,90 +311,112 @@ export const calculateCandidateScore = (
   mapId?: string,
   analysis?: CompositionAnalysis,
   isPartialMatch: boolean = false,
-  patternAnalysis?: RolePatternAnalysis
+  _patternAnalysis?: RolePatternAnalysis
 ): CandidateScore => {
-  const compositionAnalysis = analysis || analyzeComposition(selectedAgents, mapId);
+  const compositionAnalysis = analysis || analyzeComposition(selectedAgents);
+  const fullProfile = getFullAgentProfile(candidate.title);
 
   const proDataScore = calculateProDataScore(candidate, matchingComps);
-  const compositionFitScore = calculateCompositionFitScore(
-    candidate,
-    selectedAgents,
-    matchingComps
-  );
+  const compositionFitScore = calculateCompositionFitScore(candidate, selectedAgents, matchingComps);
   const roleNeedScore = calculateRoleNeedScore(candidate, compositionAnalysis);
-  const mapIdentityScore = calculateMapIdentityScore(candidate, mapId, matchingComps);
-  const redundancyPenalty = calculateRedundancyPenalty(
-    candidate,
-    selectedAgents,
-    compositionAnalysis
-  );
+  const redundancyPenalty = calculateRedundancyPenalty(candidate, selectedAgents, compositionAnalysis);
+  const functionalDiversity = calculateFunctionalDiversity(candidate, selectedAgents);
+  const proMetaScore = calculateProMetaScore(candidate);
 
-  let rolePatternBoost = 0;
-  let rolePatternPenalty = 0;
-  if (patternAnalysis) {
-    const candidateRole = getRoleFromAgent(candidate);
-    rolePatternBoost = getRoleBoost(candidateRole, patternAnalysis);
-    rolePatternPenalty = getRolePenalty(candidateRole, patternAnalysis);
-  }
+  const mapData = mapId ? calculateMapFitScore(candidate, mapId as ActiveMapName, selectedAgents) : { score: 50, reasons: [], boost: 0 };
+  const compContext = mapId ? getCompositionContextScore(candidate, selectedAgents, mapId as ActiveMapName) : { score: 50, context: '' };
+  const mapBoost = mapData.boost;
+
+  const WEIGHTS = {
+    proData: 0.25,
+    compositionFit: 0.15,
+    roleNeed: 0.20,
+    mapFit: 0.20,
+    diversity: 0.10,
+    proMeta: 0.10,
+  };
 
   let finalScore =
-    proDataScore * 0.45 +
-    compositionFitScore * 0.30 +
-    roleNeedScore * 0.15 +
-    mapIdentityScore * 0.10 -
-    redundancyPenalty +
-    rolePatternBoost -
-    rolePatternPenalty;
+    proDataScore * WEIGHTS.proData +
+    compositionFitScore * WEIGHTS.compositionFit +
+    roleNeedScore * WEIGHTS.roleNeed +
+    mapData.score * WEIGHTS.mapFit +
+    functionalDiversity * WEIGHTS.diversity +
+    proMetaScore * WEIGHTS.proMeta -
     redundancyPenalty;
+
+  if (mapBoost > 0) {
+    finalScore += mapBoost * 0.15;
+  }
+
+  if (mapBoost < 0) {
+    finalScore += mapBoost * 0.20;
+  }
 
   if (isPartialMatch) {
     const totalUses = matchingComps.reduce((sum, comp) => sum + comp.timesPlayed, 0);
     if (totalUses < 30) {
-      finalScore = finalScore * 0.6 + roleNeedScore * 0.4;
+      finalScore = finalScore * 0.5 + roleNeedScore * 0.5;
     } else if (totalUses < 60) {
-      finalScore = finalScore * 0.75 + roleNeedScore * 0.25;
+      finalScore = finalScore * 0.65 + roleNeedScore * 0.35;
     }
   }
 
+  const profile = getAgentProfile(candidate.title);
   const reasons: string[] = [];
   const pros: string[] = [];
   const cons: string[] = [];
 
-  const profile = getAgentProfile(candidate.title);
   if (profile) {
     if (compositionAnalysis.needs.missingRoles.includes(profile.role)) {
-      reasons.push(`Fills missing ${profile.role} role`);
-      pros.push(`Adds needed ${profile.role} to team`);
+      reasons.push(`Llena el rol de ${profile.role} que falta`);
+      pros.push(`Añade el ${profile.role} necesario`);
+    }
+
+    if (profile.role === 'Controlador') {
+      const candidateSubrole = getControllerSubrole(candidate.title);
+
+      if (candidateSubrole === 'wallPlace' && compositionAnalysis.needs.hasSmokeBlock && !compositionAnalysis.needs.hasWallPlace) {
+        reasons.push('Añade wall-control para complementar smokes existentes');
+        pros.push('Perfecto complemento para tu controlador de smokes');
+      }
+
+      if (candidateSubrole === 'smokeBlock' && compositionAnalysis.needs.hasWallPlace && !compositionAnalysis.needs.hasSmokeBlock) {
+        reasons.push('Añade smoke-block para complementar wall-control existente');
+        pros.push('Perfecto complemento para tu controlador de pared');
+      }
+
+      if ((candidateSubrole === 'smokeBlock' && compositionAnalysis.needs.hasSmokeBlock && !compositionAnalysis.needs.hasWallPlace) ||
+          (candidateSubrole === 'wallPlace' && compositionAnalysis.needs.hasWallPlace && !compositionAnalysis.needs.hasSmokeBlock)) {
+        reasons.push('REDUNDANTE: No completa lo que falta');
+        cons.push('Este controlador es redundante - necesitas el tipo opuesto');
+      }
     }
 
     const fillsSubroles = profile.subroles.filter(
       sub => compositionAnalysis.needs.missingTacticalFunctions.includes(sub)
     );
     if (fillsSubroles.length > 0) {
-      reasons.push(`Provides: ${fillsSubroles.join(', ')}`);
-      fillsSubroles.forEach(sub => pros.push(`Good ${sub.replace('-', ' ')} capability`));
-    }
-
-    if (profile.subroles.includes('wall-controller') && compositionAnalysis.needs.hasPrimarySmokes) {
-      reasons.push('Adds wall control without duplicating primary smokes');
-      pros.push('Complements existing controller well');
+      reasons.push(`Añade funciones: ${fillsSubroles.join(', ')}`);
+      fillsSubroles.forEach(sub => pros.push(`Añade ${sub.replace('-', ' ')}`));
     }
 
     if (compositionAnalysis.needs.duplicatedRoles.includes(profile.role)) {
-      reasons.push(`WARNING: ${profile.role} already in team`);
-      cons.push(`Duplicates ${profile.role} role`);
+      reasons.push(`Duplica el rol de ${profile.role}`);
+      cons.push(`Demasiados ${profile.role}s en el equipo`);
     }
+  }
 
-    if (profile.role === 'Iniciador' && compositionAnalysis.needs.subroleCounts['flash-initiator'] >= 1) {
-      reasons.push('Second initiator - need strong justification');
-      cons.push('May overlap with existing initiator utility');
-    }
+  if (mapData.reasons.length > 0) {
+    reasons.push(...mapData.reasons.slice(0, 3));
+  }
 
-    if (profile.role === 'Controlador' &&
-        compositionAnalysis.needs.subroleCounts['primary-smokes'] >= 1 &&
-        !profile.subroles.includes('wall-controller')) {
-      reasons.push('Redundant primary smoke controller');
-      cons.push('Too similar to existing controller');
+  if (fullProfile) {
+    const rankInfo: string[] = [];
+    if (fullProfile.proPickRate > 10) rankInfo.push(`Pick rate pro: ${fullProfile.proPickRate}%`);
+    if (fullProfile.proWinRate > 50) rankInfo.push(`Win rate pro: ${fullProfile.proWinRate}%`);
+    if (rankInfo.length > 0) {
+      reasons.push(rankInfo.join(', '));
     }
   }
 
@@ -367,41 +428,61 @@ export const calculateCandidateScore = (
     confidence = 'medium';
   }
 
+  if (!matchingComps.length && mapData.score > 75) {
+    confidence = 'medium';
+  }
+
   const matchType = matchingComps.length > 0 && matchingComps.every(comp =>
     selectedAgents.every(sel =>
       comp.agents.some(a => a.title.toLowerCase() === sel.title.toLowerCase())
     )
   ) ? 'exact' : 'partial';
 
-  const rejectedAlternatives: RejectedAlternative[] = [];
+  let recommendationStrength: 'must-pick' | 'highly-recommended' | 'recommended' | 'situational' | 'risky' = 'situational';
+  if (finalScore >= 80 && confidence !== 'low') {
+    recommendationStrength = 'must-pick';
+  } else if (finalScore >= 65) {
+    recommendationStrength = 'highly-recommended';
+  } else if (finalScore >= 50) {
+    recommendationStrength = 'recommended';
+  } else if (finalScore >= 35) {
+    recommendationStrength = 'situational';
+  } else {
+    recommendationStrength = 'risky';
+  }
 
   return {
     agent: candidate,
     proDataScore,
     compositionFitScore,
     roleNeedScore,
-    mapIdentityScore,
     redundancyPenalty,
     finalScore,
     reasons,
     pros,
     cons,
-    rejectedAlternatives,
     confidence,
     matchType,
+    functionalDiversity,
+    mapFitScore: mapData.score,
+    compositionContextScore: compContext.score,
+    mapBoost,
+    proMetaScore,
+    recommendationStrength,
   };
 };
 
-export const getScoreBreakdown = (
-  candidate: CandidateScore
-): string => {
+export const getScoreBreakdown = (candidate: CandidateScore): string => {
   return `
-    Pro Data: ${candidate.proDataScore.toFixed(1)} × 0.45 = ${(candidate.proDataScore * 0.45).toFixed(1)}
-    Composition Fit: ${candidate.compositionFitScore.toFixed(1)} × 0.30 = ${(candidate.compositionFitScore * 0.30).toFixed(1)}
-    Role Need: ${candidate.roleNeedScore.toFixed(1)} × 0.15 = ${(candidate.roleNeedScore * 0.15).toFixed(1)}
-    Map Identity: ${candidate.mapIdentityScore.toFixed(1)} × 0.10 = ${(candidate.mapIdentityScore * 0.10).toFixed(1)}
+    Pro Data (×0.25): ${candidate.proDataScore.toFixed(1)} → ${(candidate.proDataScore * 0.25).toFixed(1)}
+    Composition Fit (×0.15): ${candidate.compositionFitScore.toFixed(1)} → ${(candidate.compositionFitScore * 0.15).toFixed(1)}
+    Role Need (×0.20): ${candidate.roleNeedScore.toFixed(1)} → ${(candidate.roleNeedScore * 0.20).toFixed(1)}
+    Map Fit (×0.20): ${candidate.mapFitScore.toFixed(1)} → ${(candidate.mapFitScore * 0.20).toFixed(1)}
+    Diversity (×0.10): ${candidate.functionalDiversity.toFixed(1)} → ${(candidate.functionalDiversity * 0.10).toFixed(1)}
+    Pro Meta (×0.10): ${candidate.proMetaScore.toFixed(1)} → ${(candidate.proMetaScore * 0.10).toFixed(1)}
+    Map Boost: +${candidate.mapBoost.toFixed(1)}
     Redundancy Penalty: -${candidate.redundancyPenalty.toFixed(1)}
-    ─────────────────────────
+    Recommendation: ${candidate.recommendationStrength}
     Final Score: ${candidate.finalScore.toFixed(1)}
   `;
 };

@@ -1,35 +1,24 @@
 export type AgentRole = 'Duelista' | 'Controlador' | 'Iniciador' | 'Centinela';
 
 export type TacticalSubrole =
-  | 'primary-smokes'
-  | 'execute-smokes'
-  | 'secondary-controller'
-  | 'flex-controller'
-  | 'wall-controller'
-  | 'anchor'
-  | 'site-anchor'
-  | 'lurker'
-  | 'entry'
-  | 'space-creator'
-  | 'mobility-duelist'
-  | 'fast-execute'
-  | 'clear-space'
-  | 'recon'
+  | 'smoke-block'
+  | 'area-denial-smoke'
+  | 'wall-place'
+  | 'sustained-control'
   | 'flash-initiator'
-  | 'blind-support'
-  | 'damage-utility'
+  | 'recon-initiator'
+  | 'damage-initiator'
+  | 'anchor-sentinel'
   | 'trap-sentinel'
-  | 'flank-watch'
+  | 'support-sentinel'
+  | 'entry-duelist'
+  | 'mobility-duelist'
+  | 'lurk-duelist'
   | 'postplant'
-  | 'map-control'
-  | 'execute-support'
   | 'healing'
-  | 'support'
-  | 'retake-support'
-  | 'stall'
-  | 'crowd-control'
+  | 'retake'
   | 'area-denial'
-  | 'anti-push';
+  | 'crowd-control';
 
 export interface MapStrength {
   mapId: string;
@@ -48,59 +37,78 @@ export interface TacticalProfile {
   description: string;
 }
 
-export const COMPLEMENTARY_CONTROLLER_PAIRS = [
-  ['Omen', 'Viper'],
-  ['Brimstone', 'Viper'],
-  ['Astra', 'Viper'],
-  ['Omen', 'Harbor'],
-  ['Clove', 'Viper'],
-  ['Brimstone', 'Harbor'],
-  ['Miks', 'Viper'],
-  ['Miks', 'Harbor'],
-];
-
-export const REDUNDANT_CONTROLLER_PAIRS = [
-  ['Omen', 'Brimstone'],
-  ['Omen', 'Astra'],
-  ['Omen', 'Clove'],
-  ['Brimstone', 'Astra'],
-  ['Brimstone', 'Clove'],
-  ['Astra', 'Clove'],
-  ['Harbor', 'Viper'],
-  ['Miks', 'Omen'],
-  ['Miks', 'Brimstone'],
-  ['Miks', 'Astra'],
-  ['Miks', 'Clove'],
-];
+export const CONTROLLER_COMPLEMENT_MAP: Record<string, string[]> = {
+  smokeBlock: ['Viper', 'Harbor'],
+  wallPlace: ['Miks', 'Brimstone', 'Astra', 'Clove'],
+};
 
 export const isComplementaryControllerPair = (agent1: string, agent2: string): boolean => {
-  return COMPLEMENTARY_CONTROLLER_PAIRS.some(
-    pair => (pair[0] === agent1 && pair[1] === agent2) ||
-      (pair[0] === agent2 && pair[1] === agent1)
-  );
+  const profile1 = getAgentProfile(agent1);
+  const profile2 = getAgentProfile(agent2);
+
+  if (!profile1 || !profile2 || profile1.role !== 'Controlador' || profile2.role !== 'Controlador') {
+    return false;
+  }
+
+  const subrole1 = profile1.subroles.includes('wall-place') ? 'wallPlace' : 'smokeBlock';
+  const subrole2 = profile2.subroles.includes('wall-place') ? 'wallPlace' : 'smokeBlock';
+
+  return subrole1 !== subrole2;
 };
 
 export const isRedundantControllerPair = (agent1: string, agent2: string): boolean => {
-  return REDUNDANT_CONTROLLER_PAIRS.some(
-    pair => (pair[0] === agent1 && pair[1] === agent2) ||
-      (pair[0] === agent2 && pair[1] === agent1)
-  );
+  const profile1 = getAgentProfile(agent1);
+  const profile2 = getAgentProfile(agent2);
+
+  if (!profile1 || !profile2 || profile1.role !== 'Controlador' || profile2.role !== 'Controlador') {
+    return false;
+  }
+
+  const hasSmokeBlock1 = profile1.subroles.includes('smoke-block');
+  const hasSmokeBlock2 = profile2.subroles.includes('smoke-block');
+  const hasWallPlace1 = profile1.subroles.includes('wall-place');
+  const hasWallPlace2 = profile2.subroles.includes('wall-place');
+
+  if (hasSmokeBlock1 && hasSmokeBlock2 && !hasWallPlace1 && !hasWallPlace2) {
+    return true;
+  }
+
+  if (hasWallPlace1 && hasWallPlace2) {
+    return true;
+  }
+
+  return false;
+};
+
+export const getComplementaryController = (agentName: string): string | null => {
+  const profile = getAgentProfile(agentName);
+  if (!profile || profile.role !== 'Controlador') return null;
+
+  if (profile.subroles.includes('smoke-block')) {
+    return 'Viper';
+  }
+  if (profile.subroles.includes('wall-place')) {
+    const smokeControllers = ['Miks', 'Brimstone', 'Astra', 'Clove'];
+    return smokeControllers[Math.floor(Math.random() * smokeControllers.length)];
+  }
+
+  return null;
+};
+
+export const getControllerSubrole = (agentName: string): 'smokeBlock' | 'wallPlace' | null => {
+  const profile = getAgentProfile(agentName);
+  if (!profile || profile.role !== 'Controlador') return null;
+
+  if (profile.subroles.includes('wall-place')) return 'wallPlace';
+  if (profile.subroles.includes('smoke-block')) return 'smokeBlock';
+  return null;
 };
 
 export const AGENT_PROFILES: Record<string, TacticalProfile> = {
   Miks: {
     agentName: 'Miks',
     role: 'Controlador',
-    subroles: [
-      'primary-smokes',
-      'flex-controller',
-      'execute-support',
-      'support',
-      'healing',
-      'crowd-control',
-      'retake-support',
-      'fast-execute',
-    ],
+    subroles: ['smoke-block', 'healing', 'crowd-control', 'retake'],
     synergiesWith: ['Neon', 'Raze', 'Jett', 'Waylay', 'Tejo', 'Breach', 'KAY/O', 'Gekko'],
     redundantWith: ['Omen', 'Brimstone', 'Astra', 'Clove'],
     uniqueStrengths: [
@@ -111,30 +119,25 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Buen valor en executes rápidos y retakes coordinados',
     ],
     weaknesses: [
-      'Puede ser redundante si el equipo ya tiene un controlador de humos principales',
       'No aporta wall-control persistente como Viper o Harbor',
       'Necesita coordinación para aprovechar bien su utilidad de soporte',
-      'Puede pisarse con iniciadores de crowd-control si la composición ya tiene demasiado setup',
     ],
-    description:
-      'Controlador de soporte basado en sonido. Aporta smokes, curación, apoyo al equipo y crowd-control para executes y retakes coordinados.',
+    description: 'Controlador de soporte basado en sonido. Aporta smokes, curación y crowd-control.',
   },
   Omen: {
     agentName: 'Omen',
     role: 'Controlador',
-    subroles: ['primary-smokes', 'flex-controller', 'lurker', 'blind-support', 'map-control'],
+    subroles: ['smoke-block', 'crowd-control', 'lurk-duelist'],
     synergiesWith: ['Viper', 'Harbor', 'Sova', 'Fade', 'Tejo', 'Skye', 'Gekko'],
-    redundantWith: ['Brimstone', 'Astra', 'Clove'],
+    redundantWith: ['Brimstone', 'Astra', 'Clove', 'Miks'],
     uniqueStrengths: [
       'Humos recargables con tiempo de reutilización',
       'Paranoia para habilitar entradas y gather info',
       'Flexibilidad en rondas largas',
       'Capacidad de lurk y flank',
-      'Presión de mapa con cobertura global',
     ],
     weaknesses: [
       'No aporta wall-control persistente como Viper',
-      'Puede solaparse con otros controladores de humos principales',
       'Menos efectivo en executes rápidos comparado con Brimstone',
     ],
     description: 'Controlador flexible con capacidad de lurk. Aporta humos principales y presión de mapa.',
@@ -142,9 +145,9 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
   Brimstone: {
     agentName: 'Brimstone',
     role: 'Controlador',
-    subroles: ['primary-smokes', 'execute-smokes', 'postplant', 'damage-utility', 'fast-execute'],
+    subroles: ['smoke-block', 'area-denial-smoke', 'postplant'],
     synergiesWith: ['Viper', 'Raze', 'Gekko', 'Tejo', 'Jett', 'Neon'],
-    redundantWith: ['Omen', 'Astra', 'Clove'],
+    redundantWith: ['Omen', 'Astra', 'Clove', 'Miks'],
     uniqueStrengths: [
       'Smokes instantáneos desde cualquier parte del mapa',
       'Molly para post-plant y denying',
@@ -153,16 +156,15 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Excelente para executes rápidos',
     ],
     weaknesses: [
-      'Puede ser redundante si ya hay otro controlador de humos principales',
       'Menos flexible en rondas defensivas',
       'No aporta wall-control como Viper',
     ],
-    description: 'Controlador especializado en executes y post-plant. Excelente para ataques estructurados.',
+    description: 'Controlador especializado en executes y post-plant.',
   },
   Viper: {
     agentName: 'Viper',
     role: 'Controlador',
-    subroles: ['secondary-controller', 'wall-controller', 'map-control', 'anchor', 'site-anchor', 'stall', 'postplant'],
+    subroles: ['wall-place', 'sustained-control', 'anchor-sentinel', 'postplant'],
     synergiesWith: ['Omen', 'Brimstone', 'Astra', 'Miks', 'Killjoy', 'Cypher', 'Chamber', 'Sage'],
     redundantWith: ['Harbor'],
     uniqueStrengths: [
@@ -170,11 +172,9 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Snake Bite para post-plant y denial',
       'Orb de recuperación para anchor',
       'Excelente control de mapa a largo plazo',
-      'Capacidad de stall y denying',
     ],
     weaknesses: [
       'Requiere planificación previa para máximo rendimiento',
-      'Como único controlador puede ser menos flexible en algunos mapas',
       'No es un primary-smokes tradicional',
     ],
     description: 'Controladora de pared y mapa. Aporta control persistente, anchor y post-plant.',
@@ -182,9 +182,9 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
   Astra: {
     agentName: 'Astra',
     role: 'Controlador',
-    subroles: ['primary-smokes', 'map-control', 'execute-support', 'damage-utility', 'crowd-control'],
+    subroles: ['smoke-block', 'crowd-control', 'recon-initiator'],
     synergiesWith: ['Jett', 'Raze', 'KAY/O', 'Sova', 'Viper'],
-    redundantWith: ['Omen', 'Brimstone', 'Clove'],
+    redundantWith: ['Omen', 'Brimstone', 'Clove', 'Miks'],
     uniqueStrengths: [
       'Forma Astral para utilidad global desde cualquier lado',
       'Pulsar para executes y separar defenderes',
@@ -193,33 +193,30 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
     ],
     weaknesses: [
       'Curva de aprendizaje alta',
-      'Puede ser redundante con otros controladores',
       'Menos efectiva sin buena coordinación',
     ],
-    description: 'Controladora utility-heavy con presencia global. Mejor para equipos coordinados.',
+    description: 'Controladora utility-heavy con presencia global.',
   },
   Clove: {
     agentName: 'Clove',
     role: 'Controlador',
-    subroles: ['primary-smokes', 'postplant', 'healing', 'damage-utility', 'support'],
+    subroles: ['smoke-block', 'postplant', 'healing', 'retake'],
     synergiesWith: ['Jett', 'Neon', 'Raze', 'Phoenix', 'Yoru'],
-    redundantWith: ['Omen', 'Brimstone', 'Astra'],
+    redundantWith: ['Omen', 'Brimstone', 'Astra', 'Miks'],
     uniqueStrengths: [
       'Utilidad Post-Muerte',
-      'Mediocre para plays agresivos',
       'Self-revive capability',
       'Capacidad de heal',
     ],
     weaknesses: [
-      'Puede ser redundante con otros controladores de humos',
       'Menos útil en defensa prolongada',
     ],
-    description: 'Controladora agresiva con utiliad post-muerte y healing.',
+    description: 'Controladora agresiva con utilidad post-muerte y healing.',
   },
   Harbor: {
     agentName: 'Harbor',
     role: 'Controlador',
-    subroles: ['secondary-controller', 'wall-controller', 'execute-support', 'map-control', 'area-denial'],
+    subroles: ['wall-place', 'area-denial', 'retake'],
     synergiesWith: ['Omen', 'Viper', 'Miks', 'Jett', 'Raze', 'Neon'],
     redundantWith: ['Viper'],
     uniqueStrengths: [
@@ -228,52 +225,43 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Aporte único de wall-control con paredes destructibles',
     ],
     weaknesses: [
-      'Puede solaparse con Viper como wall-controller',
       'Menos efectivo en post-plant que otros controladores',
-      'Utility require más coordinación',
+      'Utility requiere más coordinación',
     ],
     description: 'Controladora de paredes y executes. Aporta control de geometría único.',
   },
   Jett: {
     agentName: 'Jett',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'lurker', 'mobility-duelist'],
+    subroles: ['entry-duelist', 'lurk-duelist', 'mobility-duelist'],
     synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade', 'Skye'],
     redundantWith: ['Neon', 'Raze', 'Waylay', 'Yoru'],
     uniqueStrengths: [
       'Tailwind para entries instantáneas',
       'Cloudburst para peeks seguros',
       'Drift para plays de lurk',
-      'Blade Storm para clutch potencial',
     ],
-    weaknesses: [
-      'Dependiente de habilidad mecánica',
-      'Puede ser redundante con otros duelistas de entrada',
-    ],
-    description: 'Duelista de entry y mobility. Mejor con jugadores con buena mecánica.',
+    weaknesses: ['Dependiente de habilidad mecánica'],
+    description: 'Duelista de entry y mobility.',
   },
   Raze: {
     agentName: 'Raze',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'damage-utility', 'area-denial'],
+    subroles: ['entry-duelist', 'area-denial'],
     synergiesWith: ['Brimstone', 'Sova', 'KAY/O', 'Skye', 'Gekko'],
     redundantWith: ['Jett', 'Neon', 'Waylay', 'Yoru'],
     uniqueStrengths: [
       'Blast Pack para plays verticales',
       'Paint Shells para area denial',
       'Showstopper para double kills',
-      'Excelente para crear espacio caótico',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros duelistas de entrada',
-      'Menos útil en defend sides',
-    ],
+    weaknesses: ['Menos útil en defend sides'],
     description: 'Duelista explosiva. Excelente para crear espacio y presión.',
   },
   Phoenix: {
     agentName: 'Phoenix',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'healing', 'flash-initiator'],
+    subroles: ['entry-duelist', 'healing'],
     synergiesWith: ['Brimstone', 'Sova', 'KAY/O', 'Gekko'],
     redundantWith: ['Jett', 'Raze', 'Neon', 'Waylay', 'Yoru'],
     uniqueStrengths: [
@@ -281,16 +269,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Hot Hands para self-heal',
       'Run it Back para clutch potencial',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros duelistas',
-      'Dependiente de su ultimate para clutch',
-    ],
-    description: 'Duelista autocontenido. Good para entries agresivas y plays individuales.',
+    weaknesses: ['Dependiente de su ultimate para clutch'],
+    description: 'Duelista autocontenido para entries agresivas.',
   },
   Reyna: {
     agentName: 'Reyna',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'flash-initiator'],
+    subroles: ['entry-duelist'],
     synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade'],
     redundantWith: ['Jett', 'Raze', 'Neon', 'Waylay', 'Yoru'],
     uniqueStrengths: [
@@ -298,16 +283,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Devour para heal post-kill',
       'Leer para información y presión',
     ],
-    weaknesses: [
-      'Dependiente de kills para ser efectiva',
-      'Puede ser redundante con otros duelistas',
-    ],
-    description: 'Carry duelist. Mejor cuando puede-get early kills y snowball.',
+    weaknesses: ['Dependiente de kills para ser efectiva'],
+    description: 'Carry duelist para snowball.',
   },
   Yoru: {
     agentName: 'Yoru',
     role: 'Duelista',
-    subroles: ['entry', 'lurker', 'space-creator', 'flash-initiator', 'mobility-duelist'],
+    subroles: ['entry-duelist', 'lurk-duelist', 'mobility-duelist'],
     synergiesWith: ['Omen', 'Sova', 'KAY/O', 'Fade'],
     redundantWith: ['Jett', 'Raze', 'Neon', 'Waylay'],
     uniqueStrengths: [
@@ -315,33 +297,26 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Gatecrash para flanks',
       'Dimensional Drift para lurk',
     ],
-    weaknesses: [
-      'Curva de aprendizaje alta',
-      'Puede ser redundante con otros duelistas de entrada',
-    ],
-    description: 'Flanker y trickster. Mejor para ataques sorpresa y plays divide.',
+    weaknesses: ['Curva de aprendizaje alta'],
+    description: 'Flanker y trickster para ataques sorpresa.',
   },
   Iso: {
     agentName: 'Iso',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'damage-utility'],
+    subroles: ['entry-duelist'],
     synergiesWith: ['Omen', 'Brimstone', 'Viper', 'Sova', 'Tejo'],
     redundantWith: ['Jett', 'Raze', 'Neon', 'Waylay', 'Yoru'],
     uniqueStrengths: [
       'Contingency para shields',
       'Double Tap para spray control',
-      'Kill Contract para reward competitivo',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros duelistas',
-      'Less mobility que otros duelistas',
-    ],
-    description: 'Duelista adaptativo con protección. Good para entries meditadas.',
+    weaknesses: ['Menos mobility que otros duelistas'],
+    description: 'Duelista adaptativo con protección.',
   },
   Neon: {
     agentName: 'Neon',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'mobility-duelist', 'fast-execute'],
+    subroles: ['entry-duelist', 'mobility-duelist'],
     synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade', 'Miks'],
     redundantWith: ['Jett', 'Raze', 'Waylay', 'Yoru'],
     uniqueStrengths: [
@@ -349,16 +324,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Relay Bolt para información',
       'Overdrive para site takes rápidos',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros duelistas de entrada',
-      'Dependiente de mecánica',
-    ],
-    description: 'Duelista rápido. Mejor para site hits agresivos y jugadores mecánicos.',
+    weaknesses: ['Dependiente de mecánica'],
+    description: 'Duelista rápido para site hits agresivos.',
   },
   Waylay: {
     agentName: 'Waylay',
     role: 'Duelista',
-    subroles: ['entry', 'space-creator', 'mobility-duelist', 'damage-utility', 'clear-space'],
+    subroles: ['entry-duelist', 'crowd-control'],
     synergiesWith: ['Omen', 'Brimstone', 'Sova', 'KAY/O', 'Fade', 'Miks'],
     redundantWith: ['Neon', 'Jett', 'Raze'],
     uniqueStrengths: [
@@ -366,34 +338,27 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Explosive Tag para area denial',
       'Tag Team para soporte al equipo',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros duelistas de entrada',
-      'Menos movilidad que otros duelistas',
-    ],
-    description: 'Duelista agresivo con utilidad de equipo. Crea espacio mientras apoya.',
+    weaknesses: ['Menos movilidad que otros duelistas'],
+    description: 'Duelista agresivo con utilidad de equipo.',
   },
   Sova: {
     agentName: 'Sova',
     role: 'Iniciador',
-    subroles: ['recon', 'damage-utility', 'execute-support', 'clear-space'],
+    subroles: ['recon-initiator', 'damage-initiator'],
     synergiesWith: ['Jett', 'Raze', 'Phoenix', 'Omen', 'Brimstone'],
     redundantWith: ['Fade', 'Tejo'],
     uniqueStrengths: [
       'Recon Bolt para información de largo alcance',
       'Shock Dart para daño y utilidad',
       'Drone para soporte de execute',
-      'Capacidad de mantener контрол zona',
     ],
-    weaknesses: [
-      ' Puede ser redundante con otros recons o damage-utility iniciadores',
-      'Menos útil sin coordinación de equipo',
-    ],
-    description: 'Iniciador recon clásico. Mejor para executes y gather information de largo.',
+    weaknesses: ['Menos útil sin coordinación de equipo'],
+    description: 'Iniciador recon clásico.',
   },
   Skye: {
     agentName: 'Skye',
     role: 'Iniciador',
-    subroles: ['flash-initiator', 'healing', 'support', 'retake-support', 'clear-space'],
+    subroles: ['flash-initiator', 'healing'],
     synergiesWith: ['Jett', 'Raze', 'Phoenix', 'Omen', 'Brimstone'],
     redundantWith: ['KAY/O', 'Breach', 'Tejo', 'Gekko'],
     uniqueStrengths: [
@@ -401,16 +366,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Healing para soporte de equipo',
       'Tiger para limpieza de zonas',
     ],
-    weaknesses: [
-      'Puede ser redundante si ya hay iniciador y la compo necesita otra cosa',
-      'No aporta control persistente de mapa como Viper o un centinela',
-    ],
-    description: 'Iniciador flash y healer. Mejor para soportar entries agresivas.',
+    weaknesses: ['No aporta control persistente como Viper'],
+    description: 'Iniciador flash y healer.',
   },
   Fade: {
     agentName: 'Fade',
     role: 'Iniciador',
-    subroles: ['recon', 'damage-utility', 'crowd-control', 'clear-space'],
+    subroles: ['recon-initiator', 'crowd-control'],
     synergiesWith: ['Jett', 'Raze', 'Omen', 'Brimstone', 'Neon'],
     redundantWith: ['Sova', 'Tejo'],
     uniqueStrengths: [
@@ -418,16 +380,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Prowler para información y presión',
       'Nightfall para reveal de posiciones',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros iniciadores de recon',
-      'Menos útil que Sova para largo alcance',
-    ],
-    description: 'Iniciador recon y crowd control. Mejor para gather info y punish positions.',
+    weaknesses: ['Menos útil que Sova para largo alcance'],
+    description: 'Iniciador recon y crowd control.',
   },
   Gekko: {
     agentName: 'Gekko',
     role: 'Iniciador',
-    subroles: ['flash-initiator', 'recon', 'execute-support', 'area-denial'],
+    subroles: ['flash-initiator', 'area-denial'],
     synergiesWith: ['Jett', 'Raze', 'Neon', 'Omen', 'Brimstone'],
     redundantWith: ['KAY/O', 'Breach', 'Skye', 'Tejo'],
     uniqueStrengths: [
@@ -435,16 +394,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Dizzy para flashes',
       'Thrash para soporte de execute',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros iniciadores de flash',
-      'Menos efectivo en retake que otros',
-    ],
-    description: 'Iniciador multi-utility. Flexible con site execution y retake.',
+    weaknesses: ['Menos efectivo en retake que otros'],
+    description: 'Iniciador multi-utility flexible con site execution.',
   },
   KAY_O: {
     agentName: 'KAY/O',
     role: 'Iniciador',
-    subroles: ['flash-initiator', 'damage-utility', 'execute-support', 'crowd-control'],
+    subroles: ['flash-initiator', 'damage-initiator', 'crowd-control'],
     synergiesWith: ['Jett', 'Raze', 'Phoenix', 'Omen', 'Brimstone'],
     redundantWith: ['Skye', 'Breach', 'Gekko', 'Tejo'],
     uniqueStrengths: [
@@ -453,16 +409,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'FRAG/ment para daño',
       'Reset para clutch potencial',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros iniciadores',
-      'Dependiente de su utilidad de combate',
-    ],
-    description: 'Iniciador agresivo con utilidad de combate. Mejor para fights de mid-round.',
+    weaknesses: ['Dependiente de su utilidad de combate'],
+    description: 'Iniciador agresivo con utilidad de combate.',
   },
   Tejo: {
     agentName: 'Tejo',
     role: 'Iniciador',
-    subroles: ['damage-utility', 'clear-space', 'execute-support', 'anti-push', 'area-denial'],
+    subroles: ['damage-initiator', 'crowd-control', 'area-denial'],
     synergiesWith: ['Omen', 'Brimstone', 'Viper', 'Jett', 'Neon', 'Miks'],
     redundantWith: ['Skye', 'Breach', 'KAY/O', 'Gekko'],
     uniqueStrengths: [
@@ -470,16 +423,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Concussion para setup',
       'Spotter para información',
     ],
-    weaknesses: [
-      'No reemplaza completamente a un recon puro',
-      'Puede necesitar coordinación de equipo',
-    ],
-    description: 'Iniciador focused en execute con area control. Mejor para ataques estructurados.',
+    weaknesses: ['Puede necesitar coordinación de equipo'],
+    description: 'Iniciador focused en execute con area control.',
   },
   Breach: {
     agentName: 'Breach',
     role: 'Iniciador',
-    subroles: ['damage-utility', 'crowd-control', 'execute-support', 'flash-initiator', 'clear-space'],
+    subroles: ['damage-initiator', 'crowd-control'],
     synergiesWith: ['Jett', 'Raze', 'Phoenix', 'Omen', 'Brimstone'],
     redundantWith: ['KAY/O', 'Skye', 'Tejo', 'Gekko'],
     uniqueStrengths: [
@@ -487,16 +437,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Fault Line para crowd control',
       'Rolling Thunder para team fight',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros iniciadores de daño',
-      'Menos útil para información que recons',
-    ],
-    description: 'Iniciador de damage y crowd control. Mejor para forzar posiciones.',
+    weaknesses: ['Menos útil para información que recons'],
+    description: 'Iniciador de damage y crowd control.',
   },
   Cypher: {
     agentName: 'Cypher',
     role: 'Centinela',
-    subroles: ['trap-sentinel', 'flank-watch', 'anchor', 'site-anchor', 'map-control'],
+    subroles: ['trap-sentinel', 'anchor-sentinel'],
     synergiesWith: ['Omen', 'Viper', 'Brimstone', 'Sova', 'Killjoy'],
     redundantWith: ['Killjoy', 'Chamber', 'Sage', 'Deadlock', 'Veto', 'Vyse'],
     uniqueStrengths: [
@@ -504,16 +451,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Cyber Cage para información',
       'Spy Camera para control de mapa',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros centinelas',
-      'Menos útil en lado attack',
-    ],
-    description: 'Centinela clásico con información y denial. Mejor para setups defensivos.',
+    weaknesses: ['Menos útil en lado attack'],
+    description: 'Centinela clásico con información y denial.',
   },
   Killjoy: {
     agentName: 'Killjoy',
     role: 'Centinela',
-    subroles: ['trap-sentinel', 'flank-watch', 'anchor', 'site-anchor', 'postplant', 'stall', 'area-denial'],
+    subroles: ['trap-sentinel', 'anchor-sentinel', 'postplant'],
     synergiesWith: ['Omen', 'Viper', 'Brimstone', 'Sova', 'Cypher'],
     redundantWith: ['Cypher', 'Chamber', 'Sage', 'Deadlock', 'Veto', 'Vyse'],
     uniqueStrengths: [
@@ -522,16 +466,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Nanoswarm para post-plant',
       'Lockdown para retake',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros centinelas',
-      'Dependiente de/setup',
-    ],
-    description: 'Centinela defensivo con post-plant fuerte. Mejor para anchoring sites.',
+    weaknesses: ['Dependiente de setup'],
+    description: 'Centinela defensivo con post-plant fuerte.',
   },
   Chamber: {
     agentName: 'Chamber',
     role: 'Centinela',
-    subroles: ['flank-watch', 'anchor', 'site-anchor', 'lurker'],
+    subroles: ['lurk-duelist', 'postplant'],
     synergiesWith: ['Omen', 'Viper', 'Sova', 'Fade'],
     redundantWith: ['Cypher', 'Killjoy', 'Sage', 'Deadlock', 'Veto', 'Vyse'],
     uniqueStrengths: [
@@ -539,16 +480,13 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Trademark para teleport trap',
       'Rendezvous para rotations',
     ],
-    weaknesses: [
-      'Puede ser redundante con centinelas tradicionales',
-      'Less utility de stall que otros',
-    ],
-    description: 'Centinela híbrido. Mejor para jugadores que quieren sentinel utility con firepower de duelist.',
+    weaknesses: ['Menos utility de stall que otros'],
+    description: 'Centinela híbrido con firepower de duelist.',
   },
   Sage: {
     agentName: 'Sage',
     role: 'Centinela',
-    subroles: ['healing', 'stall', 'site-anchor', 'support', 'retake-support'],
+    subroles: ['healing', 'retake'],
     synergiesWith: ['All'],
     redundantWith: ['Cypher', 'Killjoy', 'Chamber', 'Deadlock', 'Veto', 'Vyse'],
     uniqueStrengths: [
@@ -557,51 +495,40 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Barrier Orb para setup de site',
       'Resurrection para clutch potencial',
     ],
-    weaknesses: [
-      'Puede ser redundante con otros centinelas',
-      'Less utility de información que Cypher/Killjoy',
-    ],
-    description: 'Centinela support con healing y utility. Mejor para plays defensivos.',
+    weaknesses: ['Menos utility de información que Cypher/Killjoy'],
+    description: 'Centinela support con healing y utility.',
   },
   Deadlock: {
     agentName: 'Deadlock',
     role: 'Centinela',
-    subroles: ['trap-sentinel', 'stall', 'site-anchor', 'crowd-control', 'area-denial'],
+    subroles: ['trap-sentinel', 'area-denial'],
     synergiesWith: ['Omen', 'Viper', 'Cypher', 'Killjoy'],
     redundantWith: ['Cypher', 'Killjoy', 'Chamber', 'Sage', 'Veto', 'Vyse'],
     uniqueStrengths: [
       'GravNet para pulling enemies',
       'Sensor Neuron para información',
       'Barrier Mesh para rotations',
-      'Sonar Sensor para denial',
     ],
-    weaknesses: [
-      ' Puede ser redundante con otros centinelas',
-      'Menos información que Cypher',
-    ],
-    description: 'Centinela de denial de área. Mejor para lock down de espacios.',
+    weaknesses: ['Menos información que Cypher'],
+    description: 'Centinela de denial de área.',
   },
   Veto: {
     agentName: 'Veto',
     role: 'Centinela',
-    subroles: ['trap-sentinel', 'recon', 'postplant', 'stall'],
+    subroles: ['trap-sentinel', 'recon-initiator', 'postplant'],
     synergiesWith: ['Omen', 'Viper', 'Cypher', 'Killjoy'],
     redundantWith: ['Cypher', 'Killjoy', 'Chamber', 'Sage', 'Deadlock', 'Vyse'],
     uniqueStrengths: [
       'Outpost para multi-información',
       'Abyss para picks tardíos',
-      'Contingency para post-plant',
     ],
-    weaknesses: [
-      ' Puede ser redundante con otros centinelas',
-      'Menos utility de denial que otros',
-    ],
-    description: 'Centinela informativo con impacto tardío. Mejor para patient play.',
+    weaknesses: ['Menos utility de denial que otros'],
+    description: 'Centinela informativo con impacto tardío.',
   },
   Vyse: {
     agentName: 'Vyse',
     role: 'Centinela',
-    subroles: ['trap-sentinel', 'stall', 'site-anchor', 'flash-initiator', 'area-denial'],
+    subroles: ['trap-sentinel', 'crowd-control'],
     synergiesWith: ['Omen', 'Viper', 'Cypher', 'Killjoy'],
     redundantWith: ['Cypher', 'Killjoy', 'Chamber', 'Sage', 'Deadlock', 'Veto'],
     uniqueStrengths: [
@@ -609,11 +536,8 @@ export const AGENT_PROFILES: Record<string, TacticalProfile> = {
       'Shear para seguridad',
       'Ambush para kills sorpresa',
     ],
-    weaknesses: [
-      ' Puede ser redundante con otros centinelas',
-      'Less información que Cypher',
-    ],
-    description: 'Centinela de control de área con stall fuerte. Mejor para setups defensivos.',
+    weaknesses: ['Menos información que Cypher'],
+    description: 'Centinela de control de área con stall fuerte.',
   },
 };
 
@@ -623,37 +547,24 @@ export const getAgentProfile = (agentName: string): TacticalProfile | undefined 
 
 export const getSubroleWeight = (subrole: TacticalSubrole): number => {
   const weights: Record<TacticalSubrole, number> = {
-    'primary-smokes': 10,
-    'execute-smokes': 7,
-    'secondary-controller': 6,
-    'flex-controller': 5,
-    'wall-controller': 8,
-    'anchor': 7,
-    'site-anchor': 6,
-    'lurker': 5,
-    'entry': 6,
-    'space-creator': 5,
-    'mobility-duelist': 5,
-    'fast-execute': 4,
-    'clear-space': 4,
-    'recon': 4,
+    'smoke-block': 10,
+    'area-denial-smoke': 7,
+    'wall-place': 8,
+    'sustained-control': 6,
     'flash-initiator': 4,
-    'blind-support': 3,
-    'damage-utility': 4,
+    'recon-initiator': 4,
+    'damage-initiator': 4,
+    'anchor-sentinel': 6,
     'trap-sentinel': 3,
-    'flank-watch': 4,
+    'support-sentinel': 3,
+    'entry-duelist': 6,
+    'mobility-duelist': 4,
+    'lurk-duelist': 4,
     'postplant': 3,
-    'map-control': 3,
-    'execute-support': 3,
     'healing': 2,
-    'support': 2,
-    'retake-support': 3,
-    'stall': 3,
-    'crowd-control': 2,
+    'retake': 3,
     'area-denial': 3,
-    'anti-push': 3,
+    'crowd-control': 2,
   };
   return weights[subrole] || 1;
 };
-
-export { isCompatibleControllerPair, COMPATIBLE_CONTROLLER_PAIRS } from './agentProfilesOld';
