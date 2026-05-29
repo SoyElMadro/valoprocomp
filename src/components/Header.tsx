@@ -11,7 +11,7 @@ export const Header = () => {
           </div>
           <div className="logo-text">
             <h1>ValoProComp</h1>
-            <p>Composition Builder & Agent Recommender</p>
+            <p>Composiciones · Agentes · Tácticas</p>
           </div>
         </div>
         <div className="header-actions">
