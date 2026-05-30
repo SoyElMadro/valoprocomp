@@ -10,6 +10,7 @@ import {
   getFullAgentProfile,
   getBestMaps,
   getWeakMaps,
+  getMapRequirements,
   type ActiveMapName,
 } from './mapAgentIntelligence';
 import { getAgentMapGuide } from '../data/tactical-guides/agentMapGuides';
@@ -431,6 +432,247 @@ const getControllerRecommendationBoost = (
   return boost;
 };
 
+interface LastPickDecision {
+  isLastPick: boolean;
+  missingRole: string | null;
+  shouldUseSentinel: boolean;
+  sentinelUsagePercent: number;
+  topSentinelAgent: string | null;
+  recommendedRole: string;
+  reason: string;
+}
+
+const analyzeSentinelUsageInComps = (compositions: Composition[]): {
+  percentage: number;
+  topSentinel: string | null;
+} => {
+  if (compositions.length === 0) {
+    return { percentage: 100, topSentinel: null };
+  }
+
+  let totalWeight = 0;
+  let sentinelWeight = 0;
+  const sentinelScores: Record<string, number> = {};
+
+  compositions.forEach(comp => {
+    const weight = comp.timesPlayed;
+    totalWeight += weight;
+
+    let hasSentinel = false;
+    comp.agents.forEach(agent => {
+      const role = ROLES[agent.title];
+      if (role === 'Centinela') {
+        hasSentinel = true;
+        sentinelScores[agent.title] = (sentinelScores[agent.title] || 0) + weight * parseFloat(comp.winRate);
+      }
+    });
+
+    if (hasSentinel) sentinelWeight += weight;
+  });
+
+  const percentage = totalWeight > 0 ? (sentinelWeight / totalWeight) * 100 : 100;
+
+  let topSentinel: string | null = null;
+  let maxScore = 0;
+  Object.entries(sentinelScores).forEach(([name, score]) => {
+    if (score > maxScore) {
+      maxScore = score;
+      topSentinel = name;
+    }
+  });
+
+  return { percentage, topSentinel };
+};
+
+const determineBestAlternative = (
+  compositions: Composition[],
+  currentRoleCounts: Record<string, number>,
+  mapId?: string
+): { role: string; reason: string } => {
+  const availableAltRoles = ['Duelista', 'Controlador', 'Iniciador'].filter(
+    role => (currentRoleCounts[role] || 0) < 2
+  );
+
+  if (mapId) {
+    const mapReqs = getMapRequirements(mapId as ActiveMapName);
+    if (mapReqs) {
+      const archetype = mapReqs.metaArchetype.toLowerCase();
+
+      if ((archetype.includes('double initiator') || archetype.includes('2 initiator') || archetype.includes('2i')) && currentRoleCounts['Iniciador'] < 2 && availableAltRoles.includes('Iniciador')) {
+        return { role: 'Iniciador', reason: 'El meta de este mapa favorece doble iniciador.' };
+      }
+      if ((archetype.includes('double controller') || archetype.includes('2 controller') || archetype.includes('2c') || archetype.includes('double wall')) && currentRoleCounts['Controlador'] < 2 && availableAltRoles.includes('Controlador')) {
+        return { role: 'Controlador', reason: 'El meta de este mapa favorece doble controlador.' };
+      }
+      if ((archetype.includes('double duelist') || archetype.includes('2 duelist') || archetype.includes('2d')) && currentRoleCounts['Duelista'] < 2 && availableAltRoles.includes('Duelista')) {
+        return { role: 'Duelista', reason: 'El meta de este mapa favorece doble duelista.' };
+      }
+    }
+  }
+
+  const nonSentinelComps = compositions.filter(comp =>
+    !comp.agents.some(agent => ROLES[agent.title] === 'Centinela')
+  );
+
+  if (nonSentinelComps.length > 0) {
+    const altRoleWeights: Record<string, number> = { Duelista: 0, Controlador: 0, Iniciador: 0 };
+    nonSentinelComps.forEach(comp => {
+      comp.agents.forEach(agent => {
+        const role = ROLES[agent.title];
+        if (role && role in altRoleWeights) {
+          altRoleWeights[role] += comp.timesPlayed * parseFloat(comp.winRate);
+        }
+      });
+    });
+
+    const altGaps: Record<string, number> = {};
+    Object.entries(altRoleWeights).forEach(([role, weight]) => {
+      if (availableAltRoles.includes(role)) {
+        altGaps[role] = weight - (currentRoleCounts[role] || 0) * 1000;
+      }
+    });
+
+    const bestAlt = Object.entries(altGaps)
+      .filter(([, gap]) => gap > 0)
+      .sort((a, b) => b[1] - a[1])[0];
+
+    if (bestAlt) {
+      return { role: bestAlt[0], reason: `Las composiciones pro sin centinela en este mapa usan ${bestAlt[0]} adicional.` };
+    }
+  }
+
+  const roleWeights: Record<string, number> = { Duelista: 0, Controlador: 0, Iniciador: 0, Centinela: 0 };
+  let totalWeight = 0;
+
+  compositions.forEach(comp => {
+    const weight = comp.timesPlayed;
+    totalWeight += weight;
+    comp.agents.forEach(agent => {
+      const role = ROLES[agent.title];
+      if (role && role in roleWeights) {
+        roleWeights[role] += weight;
+      }
+    });
+  });
+
+  const avgPerRole: Record<string, number> = {};
+  Object.keys(roleWeights).forEach(role => {
+    avgPerRole[role] = totalWeight > 0 ? roleWeights[role] / totalWeight : 0;
+  });
+
+  const roleGaps: Record<string, number> = {};
+  availableAltRoles.forEach(role => {
+    roleGaps[role] = avgPerRole[role] * 5 - (currentRoleCounts[role] || 0) * 5;
+  });
+
+  const sortedGaps = Object.entries(roleGaps).sort((a, b) => b[1] - a[1]);
+  if (sortedGaps.length > 0 && sortedGaps[0][1] > 0) {
+    return { role: sortedGaps[0][0], reason: 'Según los datos pro, este rol completaría mejor la composición.' };
+  }
+
+  const fallback = availableAltRoles.length > 0 ? availableAltRoles[0] : 'Iniciador';
+  return { role: fallback, reason: 'Se recomienda este rol para maximizar la utilidad del equipo.' };
+};
+
+const analyzeLastPickDecision = (
+  selectedAgents: Agent[],
+  compositions: Composition[],
+  mapId?: string
+): LastPickDecision => {
+  const notApplicable: LastPickDecision = {
+    isLastPick: false,
+    missingRole: null,
+    shouldUseSentinel: false,
+    sentinelUsagePercent: 0,
+    topSentinelAgent: null,
+    recommendedRole: '',
+    reason: '',
+  };
+
+  if (selectedAgents.length !== 4) return notApplicable;
+
+  const roleCounts: Record<string, number> = {
+    Duelista: 0,
+    Controlador: 0,
+    Iniciador: 0,
+    Centinela: 0,
+  };
+
+  selectedAgents.forEach(agent => {
+    const role = ROLES[agent.title];
+    if (role && role in roleCounts) {
+      roleCounts[role]++;
+    }
+  });
+
+  const missingRoles = Object.entries(roleCounts)
+    .filter(([, count]) => count === 0)
+    .map(([role]) => role);
+
+  if (missingRoles.length !== 1) return notApplicable;
+
+  const missingRole = missingRoles[0];
+
+  if (missingRole !== 'Centinela') {
+    return {
+      isLastPick: true,
+      missingRole,
+      shouldUseSentinel: false,
+      sentinelUsagePercent: 0,
+      topSentinelAgent: null,
+      recommendedRole: missingRole,
+      reason: `Falta un ${missingRole}. Prácticamente todas las composiciones profesionales necesitan al menos un ${missingRole}.`,
+    };
+  }
+
+  const sentinelUsage = analyzeSentinelUsageInComps(compositions);
+
+  let mapNeedsAnchor = true;
+  if (mapId) {
+    const mapReqs = getMapRequirements(mapId as ActiveMapName);
+    if (mapReqs) {
+      mapNeedsAnchor = mapReqs.needs.anchor;
+    }
+  }
+
+  const shouldUseSentinel = sentinelUsage.percentage >= 50 || (mapNeedsAnchor && sentinelUsage.percentage >= 30);
+
+  if (shouldUseSentinel) {
+    let topSentinel = sentinelUsage.topSentinel;
+
+    if (!topSentinel && mapId) {
+      const mapReqs = getMapRequirements(mapId as ActiveMapName);
+      if (mapReqs && mapReqs.optimalComposition.sentinels.length > 0) {
+        topSentinel = mapReqs.optimalComposition.sentinels[0];
+      }
+    }
+
+    return {
+      isLastPick: true,
+      missingRole: 'Centinela',
+      shouldUseSentinel: true,
+      sentinelUsagePercent: sentinelUsage.percentage,
+      topSentinelAgent: topSentinel,
+      recommendedRole: 'Centinela',
+      reason: `Falta Centinela. ${sentinelUsage.percentage.toFixed(0)}% de las composiciones pro usan centinela en este mapa.${
+        topSentinel ? ` ${topSentinel} es el más efectivo.` : ''
+      }`,
+    };
+  }
+
+  const altRole = determineBestAlternative(compositions, roleCounts, mapId);
+
+  return {
+    isLastPick: true,
+    missingRole: 'Centinela',
+    shouldUseSentinel: false,
+    sentinelUsagePercent: sentinelUsage.percentage,
+    topSentinelAgent: null,
+    recommendedRole: altRole.role,
+    reason: `Solo ${sentinelUsage.percentage.toFixed(0)}% de las composiciones pro usan centinela en este mapa. Se recomienda un ${altRole.role} en su lugar. ${altRole.reason}`,
+  };
+};
+
 export const getSynergyRecommendations = (
   compositions: Composition[],
   selectedAgents: Agent[],
@@ -438,6 +680,8 @@ export const getSynergyRecommendations = (
   mapId?: string
 ): TacticalRecommendation[] => {
   if (selectedAgents.length === 0) return [];
+
+  const lastPickDecision = analyzeLastPickDecision(selectedAgents, compositions, mapId);
 
   const selectedNames = selectedAgents.map(a => a.title.toLowerCase());
   const analysis = analyzeComposition(selectedAgents, mapId);
@@ -524,7 +768,7 @@ export const getSynergyRecommendations = (
       }
     }
 
-    let candidateScore = calculateCandidateScore(
+    const candidateScore = calculateCandidateScore(
       agent,
       selectedAgents,
       candidateMatchingComps,
@@ -538,6 +782,42 @@ export const getSynergyRecommendations = (
       const controllerBoost = getControllerRecommendationBoost(agent, selectedAgents, analysis);
       candidateScore.finalScore += controllerBoost;
       candidateScore.mapBoost += controllerBoost;
+    }
+
+    if (lastPickDecision.isLastPick && lastPickDecision.missingRole) {
+      if (lastPickDecision.missingRole !== 'Centinela') {
+        if (candidateRole === lastPickDecision.recommendedRole) {
+          candidateScore.finalScore += 60;
+          if (candidateScore.recommendationStrength === 'situational') candidateScore.recommendationStrength = 'highly-recommended';
+          else if (candidateScore.recommendationStrength === 'recommended') candidateScore.recommendationStrength = 'must-pick';
+          else if (candidateScore.recommendationStrength === 'risky') candidateScore.recommendationStrength = 'recommended';
+        } else {
+          candidateScore.finalScore -= 30;
+        }
+      } else if (lastPickDecision.shouldUseSentinel) {
+        if (candidateRole === 'Centinela') {
+          candidateScore.finalScore += 50;
+          if (lastPickDecision.topSentinelAgent && agent.title === lastPickDecision.topSentinelAgent) {
+            candidateScore.finalScore += 25;
+          }
+          if (candidateScore.recommendationStrength === 'situational') candidateScore.recommendationStrength = 'highly-recommended';
+          else if (candidateScore.recommendationStrength === 'recommended') candidateScore.recommendationStrength = 'must-pick';
+          else if (candidateScore.recommendationStrength === 'risky') candidateScore.recommendationStrength = 'recommended';
+        } else {
+          candidateScore.finalScore -= 15;
+        }
+      } else {
+        if (candidateRole === 'Centinela') {
+          candidateScore.finalScore -= 50;
+          if (candidateScore.recommendationStrength === 'must-pick') candidateScore.recommendationStrength = 'situational';
+          else if (candidateScore.recommendationStrength === 'highly-recommended') candidateScore.recommendationStrength = 'situational';
+          else if (candidateScore.recommendationStrength === 'recommended') candidateScore.recommendationStrength = 'risky';
+        } else if (candidateRole === lastPickDecision.recommendedRole) {
+          candidateScore.finalScore += 45;
+          if (candidateScore.recommendationStrength === 'situational') candidateScore.recommendationStrength = 'recommended';
+          else if (candidateScore.recommendationStrength === 'recommended') candidateScore.recommendationStrength = 'highly-recommended';
+        }
+      }
     }
 
     candidateScores.set(agentName, candidateScore);
@@ -589,7 +869,28 @@ export const getSynergyRecommendations = (
 
     const role = ROLES[agent.title] || 'Unknown';
 
-    const whyThisPick = generateWhyThisPick(agent, selectedAgents, analysis, mapId);
+    let whyThisPick = generateWhyThisPick(agent, selectedAgents, analysis, mapId);
+
+    if (lastPickDecision.isLastPick && lastPickDecision.missingRole) {
+      const candidateRoleName = ROLES[agent.title];
+      if (lastPickDecision.missingRole !== 'Centinela') {
+        if (candidateRoleName === lastPickDecision.recommendedRole) {
+          whyThisPick = `[PICK FINAL] ${lastPickDecision.reason} ${whyThisPick}`;
+        }
+      } else if (lastPickDecision.shouldUseSentinel) {
+        if (candidateRoleName === 'Centinela') {
+          if (lastPickDecision.topSentinelAgent && agent.title === lastPickDecision.topSentinelAgent) {
+            whyThisPick = `[MEJOR CENTINELA] ${lastPickDecision.reason} ${whyThisPick}`;
+          } else {
+            whyThisPick = `[PICK FINAL] ${lastPickDecision.reason} ${whyThisPick}`;
+          }
+        }
+      } else {
+        if (candidateRoleName !== 'Centinela' && candidateRoleName === lastPickDecision.recommendedRole) {
+          whyThisPick = `[PICK FINAL] ${lastPickDecision.reason} ${whyThisPick}`;
+        }
+      }
+    }
 
     const rejectedAlternatives: { agentName: string; reason: string }[] = [];
     sortedCandidates.slice(limit * 2).forEach(([altName, altScore]) => {

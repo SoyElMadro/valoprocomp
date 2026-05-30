@@ -30,10 +30,7 @@ export const AgentsBrowser = () => {
   const [selectedAgent, setSelectedAgent] = useState<AgentProfile | null>(null);
 
   const filteredAgents = useMemo(() => {
-    const easterEggAgent = agentAbilities.find(a => a.id === 'tomas-albaiza');
-
-    const normalAgents = agentAbilities.filter((agent) => {
-      if (agent.id === 'tomas-albaiza') return false;
+    return agentAbilities.filter((agent) => {
       const matchesSearch = search.length === 0 ||
         agent.name.toLowerCase().includes(search.toLowerCase()) ||
         agent.role.toLowerCase().includes(search.toLowerCase()) ||
@@ -42,24 +39,12 @@ export const AgentsBrowser = () => {
       const matchesDifficulty = filterDifficulty === 'Todas' || agent.difficulty === filterDifficulty;
       return matchesSearch && matchesRole && matchesDifficulty;
     });
-
-    if (search.toLowerCase().includes('down') && easterEggAgent) {
-      const matchesEasterEggRole = filterRole === 'Todos' || easterEggAgent.role === filterRole;
-      const matchesEasterEggDiff = filterDifficulty === 'Todas' || easterEggAgent.difficulty === filterDifficulty;
-      if (matchesEasterEggRole && matchesEasterEggDiff) {
-        return [easterEggAgent, ...normalAgents];
-      }
-    }
-
-    return normalAgents;
   }, [search, filterRole, filterDifficulty]);
 
   const roleCounts = useMemo(() => {
-    const counts: Record<string, number> = { Todos: agentAbilities.length - 1 };
+    const counts: Record<string, number> = { Todos: agentAbilities.length };
     agentAbilities.forEach((a) => {
-      if (a.id !== 'tomas-albaiza') {
-        counts[a.role] = (counts[a.role] || 0) + 1;
-      }
+      counts[a.role] = (counts[a.role] || 0) + 1;
     });
     return counts;
   }, []);

@@ -1451,53 +1451,6 @@ const agentAbilities: AgentProfile[] = [
       }
     ]
   },
-  {
-    id: 'tomas-albaiza',
-    name: 'Tomás Albaiza',
-    role: 'Duelista',
-    difficulty: 'Difícil',
-    description: 'El PEOR agente de Valorant. Literalmente inútili. Riot lo sacó del juego porque perdía partidas solo con seleccionarlo. Tiene 19 años (mentalidad de 12), cumple en abril (lo festeja en el discord de la facu) y nació en 2007 (y se nota). Es tan malo que su main es Brimstone y no sabe fumar. Si alguien lo pickea en tu equipo, dodgueá. Si lo pickea el rival, reíte gratis porque es autohandicap. Su winrate teorico es negativo.',
-    playstyleTips: [
-      'Morí en la primera peleA de la ronda así tenés excusa para no hacer nada el resto del round',
-      'Gastá todas las utilidades en el spawn antes de que empiece la ronda así no tenés que pensar',
-      'Si ves un enemigo, NO disparés; mejor mostrale tu cuchillo así sentís la adrenalina de estar a punto de morir',
-      'Pone los humos en las puertas de tu propio spawn para "entrenar la visión del equipo"',
-      'Si alguien te pide cambiar de agente, decí "yo banco a Brimstone" y segui haciendo 2-15',
-      'Cuando te maten, poné "19" en el chat como si eso explicara algo. Spoiler: no explica nada.',
-      'Si ganás una ronda por casualidad, decí "down" 47 veces en el chat hasta que te muteen',
-      'Naciste en 2007 y se nota en tu reaction time de 900ms'
-    ],
-    trait: '19 años, cumple en abril, 2007 — literalmente un bronce perdido en el cuerpo de un adulto',
-    bestMaps: ['Ninguno (pierde en todos)'],
-    weakMaps: ['Todos (es malo en general)'],
-    abilities: [
-      {
-        name: 'Aura de Mala Suerte',
-        type: 'Pasiva',
-        key: 'Pasiva',
-        description: 'Desde que Tomás entra al servidor, el equipo pierde automáticamente un 15% de probabilidad de ganar la ronda. Los enemigos escuchan "Never Gonna Give You Up" pero AL REVÉS, y sienten una lastima inmensa por el equipo de Tomás. Si alguien dice "tomá" en el chat, la pasiva se activa dos veces.'
-      },
-      {
-        name: 'Fallo Técnico (antes era La Edad de la Duda)',
-        type: 'Básica',
-        key: 'Q',
-        description: 'Tomás intenta susurrar "19" pero se le traba el micrófono y suelta un ruido de discord notificación. Los enemigos se confunden 0.5 segundos. Los aliados también. Nadie sabe qué pasó. El ability se gasta igual. Tiene un 30% de probabilidad de no funcionar porque "el juego le dio lag".'
-      },
-      {
-        name: 'Cumpleaños no Invitado',
-        type: 'Firma',
-        key: 'E',
-        description: 'Tomás intenta repartir facturas pero se olvidó la billetera. Les desea feliz cumpleaños a todos los aliados. Nadie cumple años. Los aliados pierden la moral porque es incómodo. Los enemigos se dan cuenta de que Tomás está en el equipo contrario y juegan más relajados. Si hay un argentino en el equipo, putea a Tomás por pedir facturas y no poner un peso.'
-      },
-      {
-        name: 'DOWN (el anti-carry)',
-        type: 'Definitiva',
-        key: 'X',
-        cost: 9,
-        description: 'Tomás activa el PODER DEL DOWN. Se queda quieto 3 segundos mientras escribe "DOWN" en el chat (con una "n" de menos porque escribió rápido). Cuando termina de escribir, revive a un enemigo al azar con HP completo porque se confundió y apretó mal la definitiva. Si no hay enemigos muertos, la definitiva se gasta igual y Tomás dice "era para asustarlos".'
-      }
-    ]
-  },
 ];
 
 export default agentAbilities;
